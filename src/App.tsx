@@ -1021,55 +1021,39 @@ export function App() {
           </div>
         </div>
 
-        {/* ADMIN ACCESS HELLCARD */}
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto 30px auto',
-          padding: '20px',
-          borderRadius: '16px',
-          background: 'rgba(0, 0, 0, 0.25)',
-          border: '1px solid var(--glass-border)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Lock size={20} style={{ color: '#d8a563' }} />
-            <div>
-              <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem', display: 'block' }}>Portal de Gestión Interno</strong>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Acceso exclusivo para Sofi y su equipo</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={() => openAuthModal('staff')}
-              className="btn-secondary"
-              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
-            >
-              <Users size={14} style={{ color: '#d8a563' }} /> Modo Equipo
-            </button>
-            <button
-              onClick={() => openAuthModal('owner')}
-              className="btn-secondary"
-              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
-            >
-              <Lock size={14} style={{ color: '#d8a563' }} /> Panel Dueña
-            </button>
-          </div>
-        </div>
-
+        {/* DISCREET ADMIN ACCESS FOOTER LINK */}
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
           paddingTop: '24px',
           borderTop: '1px solid var(--glass-border)',
-          textAlign: 'center',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
           color: 'var(--text-muted)',
           fontSize: '0.85rem'
         }}>
-          © {new Date().getFullYear()} {settings.businessName}. Diseñado con amor ❤️ para potenciar tu belleza.
+          <span>© {new Date().getFullYear()} {settings.businessName}. Diseñado con amor ❤️ para potenciar tu belleza.</span>
+          <button
+            onClick={() => openAuthModal('staff')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              opacity: 0.6,
+              transition: 'opacity 0.2s',
+              padding: 0
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+            title="Acceso restringido para el staff"
+          >
+            🔒 Acceso Equipo / Dueña
+          </button>
         </div>
       </footer>
 
@@ -1156,7 +1140,7 @@ export function App() {
                 ✕
               </button>
 
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{
                   width: '56px',
                   height: '56px',
@@ -1171,10 +1155,56 @@ export function App() {
                 }}>
                   {targetRole === 'owner' ? <Lock size={28} /> : <Users size={28} />}
                 </div>
-                <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)', marginBottom: '6px', fontWeight: 700 }}>
-                  {targetRole === 'owner' ? 'Acceso Modo Dueña' : 'Acceso Turnos (Empleadas)'}
+
+                {/* Role Switcher Tabs inside Modal */}
+                <div style={{
+                  display: 'flex',
+                  gap: '6px',
+                  background: 'rgba(0,0,0,0.2)',
+                  padding: '4px',
+                  borderRadius: '10px',
+                  marginBottom: '16px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => { setTargetRole('staff'); setPasswordError(''); }}
+                    style={{
+                      flex: 1,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: targetRole === 'staff' ? 'linear-gradient(135deg, #d8a563, #b87b32)' : 'transparent',
+                      color: targetRole === 'staff' ? '#fff' : 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    👥 Modo Equipo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setTargetRole('owner'); setPasswordError(''); }}
+                    style={{
+                      flex: 1,
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: targetRole === 'owner' ? 'linear-gradient(135deg, #d8a563, #b87b32)' : 'transparent',
+                      color: targetRole === 'owner' ? '#fff' : 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🔑 Panel Dueña
+                  </button>
+                </div>
+
+                <h3 style={{ fontSize: '1.3rem', color: 'var(--text-main)', marginBottom: '4px', fontWeight: 700 }}>
+                  {targetRole === 'owner' ? 'Acceso Modo Dueña' : 'Acceso Turnos (Equipo)'}
                 </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                   {targetRole === 'owner'
                     ? 'Ingresá la clave principal para controlar y editar el sitio'
                     : 'Ingresá la clave del equipo para gestionar los turnos'}
