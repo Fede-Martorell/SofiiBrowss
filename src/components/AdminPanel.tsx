@@ -1168,6 +1168,16 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     />
                   </div>
                   <div>
+                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>📩 Email para Recibir Notificaciones de Turnos Nuevos</label>
+                    <input
+                      type="email"
+                      className="custom-input"
+                      placeholder="Ej: sofia@gmail.com (Avisos automáticos al confirmarse turnos)"
+                      value={tempSettings.notificationEmail || ''}
+                      onChange={(e) => setTempSettings({ ...tempSettings, notificationEmail: e.target.value })}
+                    />
+                  </div>
+                  <div>
                     <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Usuario de Instagram (sin @)</label>
                     <input
                       type="text"

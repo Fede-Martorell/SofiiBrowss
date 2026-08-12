@@ -47,6 +47,7 @@ export interface AppSettings {
   autoConfirmWhatsApp: boolean;
   adminPassword?: string;
   staffPassword?: string;
+  notificationEmail?: string;
 }
 
 export interface Booking {
@@ -68,6 +69,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   phoneWhatsApp: "5492615709144",
   instagram: "SofiiBrowss.studio",
   location: "Bustamante 319, Luján de Cuyo",
+  notificationEmail: "sofiibrowss.studio@gmail.com",
   primaryColor: "#d97706",
   secondaryColor: "#0f172a",
   accentColor: "#f59e0b",

@@ -69,6 +69,30 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       notes
     });
 
+    // Send automatic background email notification if notificationEmail is set
+    if (settings.notificationEmail) {
+      try {
+        fetch(`https://formsubmit.co/ajax/${settings.notificationEmail}`, {
+          method: "POST",
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `✨ Nuevo Turno Reservado: ${clientName} (${service.name})`,
+            Servicio: service.name,
+            Fecha: selectedDate,
+            Hora: `${selectedTime} hs`,
+            Clienta: clientName,
+            Telefono: clientPhone,
+            Notas: notes || 'Sin notas'
+          })
+        }).catch(() => {});
+      } catch (err) {
+        console.error("Email notification dispatch error:", err);
+      }
+    }
+
     setStep(3); // Confirmation step
   };
 
