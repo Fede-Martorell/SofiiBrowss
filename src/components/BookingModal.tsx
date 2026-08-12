@@ -1,0 +1,390 @@
+import React, { useState } from 'react';
+import type { AppSettings, Service, Booking } from '../types';
+import { Calendar, Clock, CheckCircle2, MessageCircle, Sparkles, User, Phone, FileText } from 'lucide-react';
+
+interface BookingModalProps {
+  service: Service;
+  settings: AppSettings;
+  bookings?: Booking[];
+  onClose: () => void;
+  onConfirmBooking: (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => void;
+}
+
+export const BookingModal: React.FC<BookingModalProps> = ({
+  service,
+  settings,
+  bookings = [],
+  onClose,
+  onConfirmBooking
+}) => {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [notes, setNotes] = useState('');
+
+  // Generate available times based on custom service slots or duration
+  const generateTimeSlots = () => {
+    if (service.availableSlots && service.availableSlots.length > 0) {
+      return service.availableSlots;
+    }
+
+    const slots = [];
+    const stepMinutes = service.durationMinutes || 60;
+    let currentMinutes = settings.workStartHour * 60;
+    const endMinutes = settings.workEndHour * 60;
+
+    while (currentMinutes + stepMinutes <= endMinutes) {
+      const h = Math.floor(currentMinutes / 60);
+      const m = currentMinutes % 60;
+      const formatted = `${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}`;
+      slots.push(formatted);
+      currentMinutes += stepMinutes;
+    }
+
+    return slots.length > 0 ? slots : ['10:00', '11:30', '13:00', '14:30', '16:00', '17:30'];
+  };
+
+  const times = generateTimeSlots();
+
+  // Helper to check if time is already booked for selected date (excluding cancelled)
+  const isTimeBooked = (timeStr: string) => {
+    if (!selectedDate) return false;
+    return bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
+  };
+
+  // Get minimum date (today)
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !selectedTime || !clientName || !clientPhone) return;
+
+    onConfirmBooking({
+      clientName,
+      clientPhone,
+      date: selectedDate,
+      time: selectedTime,
+      notes
+    });
+
+    setStep(3); // Confirmation step
+  };
+
+  const handleSendWhatsApp = () => {
+    const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const text = `¡Hola ${settings.businessName}! 👋 
+Quisiera confirmar el turno que acabo de reservar en la web:
+
+✨ *Servicio:* ${service.name}
+📅 *Fecha:* ${formattedDate}
+⏰ *Hora:* ${selectedTime} hs
+👤 *Nombre:* ${clientName}
+📱 *Teléfono:* ${clientPhone}
+${notes ? `📝 *Nota:* ${notes}` : ''}
+
+¿Me confirman la disponibilidad por favor? ¡Muchas gracias!`;
+
+    const encodedText = encodeURIComponent(text);
+    const cleanPhone = settings.phoneWhatsApp.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, '_blank');
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.8)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px'
+    }}>
+      <div className="glass-panel animate-fade-in" style={{
+        maxWidth: '550px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        padding: '32px',
+        position: 'relative',
+        background: 'var(--glass-bg)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)'
+      }}>
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            fontSize: '1.5rem',
+            cursor: 'pointer'
+          }}
+        >
+          ✕
+        </button>
+
+        {step !== 3 && (
+          <div style={{ marginBottom: '24px' }}>
+            <span style={{
+              display: 'inline-block',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(216, 165, 99, 0.15)',
+              border: '1px solid rgba(216, 165, 99, 0.3)',
+              color: 'var(--primary)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              marginBottom: '8px'
+            }}>
+              Paso {step} de 2
+            </span>
+            <h2 style={{ fontSize: '1.5rem', color: 'var(--text-main)', fontWeight: 700 }}>Reservar: {service.name}</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              Duración: {service.durationMinutes} min • ${service.price.toLocaleString('es-AR')}
+            </p>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                <Calendar size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom', color: 'var(--primary)' }} />
+                Seleccioná una fecha
+              </label>
+              <input 
+                type="date" 
+                min={todayStr}
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="custom-input"
+              />
+            </div>
+
+            {selectedDate && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                  <Clock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom', color: 'var(--primary)' }} />
+                  Seleccioná un horario disponible
+                </label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+                  gap: '10px',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                  paddingRight: '4px'
+                }}>
+                  {times.map((t) => {
+                    const booked = isTimeBooked(t);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={booked}
+                        onClick={() => setSelectedTime(t)}
+                        style={{
+                          padding: '10px 6px',
+                          borderRadius: '8px',
+                          border: booked ? '1px solid rgba(239, 68, 68, 0.2)' : selectedTime === t ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                          background: booked ? 'rgba(239, 68, 68, 0.1)' : selectedTime === t ? 'linear-gradient(135deg, #d8a563, #b87b32)' : 'var(--card-bg)',
+                          color: booked ? '#fca5a5' : selectedTime === t ? '#ffffff' : 'var(--text-main)',
+                          fontWeight: selectedTime === t ? 700 : 500,
+                          cursor: booked ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s',
+                          fontSize: '0.85rem',
+                          textDecoration: booked ? 'line-through' : 'none'
+                        }}
+                        title={booked ? 'Este turno ya fue reservado' : 'Disponible'}
+                      >
+                        {t} hs {booked && <span style={{ fontSize: '0.7rem', display: 'block', textDecoration: 'none', color: '#f87171' }}>Ocupado</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <button 
+              disabled={!selectedDate || !selectedTime}
+              onClick={() => setStep(2)}
+              className="btn-primary"
+              style={{
+                marginTop: '10px',
+                width: '100%',
+                justifyContent: 'center',
+                opacity: (!selectedDate || !selectedTime) ? 0.5 : 1,
+                cursor: (!selectedDate || !selectedTime) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Continuar a tus datos →
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
+                <User size={15} style={{ display: 'inline', marginRight: '6px' }} />
+                Nombre completo *
+              </label>
+              <input 
+                type="text" 
+                required
+                placeholder="Ej: María García"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="custom-input"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
+                <Phone size={15} style={{ display: 'inline', marginRight: '6px' }} />
+                Teléfono / WhatsApp *
+              </label>
+              <input 
+                type="tel" 
+                required
+                placeholder="Ej: 11 9876-5432"
+                value={clientPhone}
+                onChange={(e) => setClientPhone(e.target.value)}
+                className="custom-input"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
+                <FileText size={15} style={{ display: 'inline', marginRight: '6px' }} />
+                Aclaración / Notas (Opcional)
+              </label>
+              <textarea 
+                rows={3}
+                placeholder="Ej: Tengo ojos sensibles, es mi primera vez..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="custom-textarea"
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <button 
+                type="button" 
+                onClick={() => setStep(1)} 
+                className="btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                Volver
+              </button>
+              <button 
+                type="submit" 
+                className="btn-primary"
+                style={{ flex: 2, justifyContent: 'center' }}
+              >
+                Confirmar Reserva ✨
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 3 && (
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <div style={{
+              width: '70px',
+              height: '70px',
+              borderRadius: '50%',
+              background: 'rgba(34, 197, 94, 0.2)',
+              color: '#4ade80',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto'
+            }}>
+              <CheckCircle2 size={40} />
+            </div>
+
+            <h2 style={{ fontSize: '1.6rem', marginBottom: '10px', color: '#fff' }}>¡Turno Solicitado!</h2>
+            <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '24px', lineHeight: '1.6' }}>
+              Registramos tu reserva para el <strong style={{ color: '#fff' }}>{selectedDate}</strong> a las <strong style={{ color: '#fff' }}>{selectedTime} hs</strong>.
+            </p>
+
+            <div style={{
+              padding: '16px',
+              borderRadius: '12px',
+              background: 'rgba(34, 197, 94, 0.1)',
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              marginBottom: '24px',
+              textAlign: 'left',
+              fontSize: '0.9rem',
+              color: '#dcfce7'
+            }}>
+              <p style={{ fontWeight: 600, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={16} /> ¡Paso Final Recomendado!
+              </p>
+              Envíanos un WhatsApp ahora con 1 solo clic para notificarnos al instante y asegurar tu lugar rápidamente.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={handleSendWhatsApp}
+                style={{
+                  background: '#22c55e',
+                  color: '#fff',
+                  padding: '14px 20px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4)'
+                }}
+              >
+                <MessageCircle size={20} /> Avisar por WhatsApp Directo
+              </button>
+
+              <a 
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Turno: ${service.name} en ${settings.businessName}`)}&dates=${selectedDate.replace(/-/g, '')}T${selectedTime.replace(':', '')}00Z/${selectedDate.replace(/-/g, '')}T${(parseInt(selectedTime.split(':')[0]) + 1).toString().padStart(2, '0')}${selectedTime.split(':')[1]}00Z&details=${encodeURIComponent(`Turno agendado para ${service.name} en ${settings.location}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary"
+                style={{ justifyContent: 'center', textDecoration: 'none', padding: '12px' }}
+              >
+                📅 Recordar en mi Google Calendar
+              </a>
+
+              <button 
+                onClick={onClose}
+                className="btn-secondary"
+                style={{ justifyContent: 'center' }}
+              >
+                Cerrar ventana
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
