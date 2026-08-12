@@ -266,8 +266,8 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
         {step === 2 && (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
-                <User size={15} style={{ display: 'inline', marginRight: '6px' }} />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                <User size={15} style={{ display: 'inline', marginRight: '6px', color: 'var(--primary)' }} />
                 Nombre completo *
               </label>
               <input 
@@ -281,8 +281,8 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
-                <Phone size={15} style={{ display: 'inline', marginRight: '6px' }} />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                <Phone size={15} style={{ display: 'inline', marginRight: '6px', color: 'var(--primary)' }} />
                 Teléfono / WhatsApp *
               </label>
               <input 
@@ -296,8 +296,8 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: '#cbd5e1' }}>
-                <FileText size={15} style={{ display: 'inline', marginRight: '6px' }} />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                <FileText size={15} style={{ display: 'inline', marginRight: '6px', color: 'var(--primary)' }} />
                 Aclaración / Notas (Opcional)
               </label>
               <textarea 

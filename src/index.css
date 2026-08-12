@@ -68,14 +68,15 @@ body.light-mode .custom-input,
 body.light-mode .custom-select,
 body.light-mode .custom-textarea {
   background: #ffffff;
-  color: #241613;
-  border-color: rgba(184, 123, 50, 0.4);
+  color: #1f1412 !important;
+  border: 1.5px solid rgba(184, 123, 50, 0.45);
+  font-weight: 600;
 }
 
 body.light-mode .custom-input::placeholder,
 body.light-mode .custom-textarea::placeholder {
-  color: #78625c;
-  opacity: 0.8;
+  color: #5c453e !important;
+  opacity: 0.9;
 }
 
 * {
