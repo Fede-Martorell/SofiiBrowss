@@ -46,8 +46,10 @@ body.light-mode strong {
   color: #241613 !important;
 }
 
-body.light-mode p {
-  color: #44302c !important;
+body.light-mode p,
+body.light-mode label {
+  color: #3b2824 !important;
+  font-weight: 500;
 }
 
 body.light-mode span:not(.btn-primary span) {
@@ -59,6 +61,21 @@ body.light-mode .glass-card {
   box-shadow: 0 14px 35px rgba(60, 42, 38, 0.09);
   border: 1px solid rgba(184, 123, 50, 0.3);
   background: #faf3e8;
+  color: #241613;
+}
+
+body.light-mode .custom-input,
+body.light-mode .custom-select,
+body.light-mode .custom-textarea {
+  background: #ffffff;
+  color: #241613;
+  border-color: rgba(184, 123, 50, 0.4);
+}
+
+body.light-mode .custom-input::placeholder,
+body.light-mode .custom-textarea::placeholder {
+  color: #78625c;
+  opacity: 0.8;
 }
 
 * {

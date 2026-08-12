@@ -1159,7 +1159,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     <Phone size={18} style={{ color: '#d8a563' }} /> Contacto & Redes
                   </h4>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Número de WhatsApp (con código de país ej: 54911...)</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Número de WhatsApp (con código de país ej: 54911...)</label>
                     <input
                       type="text"
                       className="custom-input"
@@ -1168,7 +1168,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>📩 Email para Recibir Notificaciones de Turnos Nuevos</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>📩 Email para Recibir Notificaciones de Turnos Nuevos</label>
                     <input
                       type="email"
                       className="custom-input"
@@ -1178,7 +1178,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Usuario de Instagram (sin @)</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Usuario de Instagram (sin @)</label>
                     <input
                       type="text"
                       className="custom-input"
@@ -1187,7 +1187,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Dirección / Ubicación física</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Dirección / Ubicación física</label>
                     <input
                       type="text"
                       className="custom-input"

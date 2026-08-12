@@ -345,25 +345,27 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
               <CheckCircle2 size={40} />
             </div>
 
-            <h2 style={{ fontSize: '1.6rem', marginBottom: '10px', color: '#fff' }}>¡Turno Solicitado!</h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginBottom: '24px', lineHeight: '1.6' }}>
-              Registramos tu reserva para el <strong style={{ color: '#fff' }}>{selectedDate}</strong> a las <strong style={{ color: '#fff' }}>{selectedTime} hs</strong>.
+            <h2 style={{ fontSize: '1.6rem', marginBottom: '10px', color: 'var(--text-main)' }}>¡Turno Solicitado!</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '24px', lineHeight: '1.6' }}>
+              Registramos tu reserva para el <strong style={{ color: 'var(--text-main)' }}>{selectedDate}</strong> a las <strong style={{ color: 'var(--text-main)' }}>{selectedTime} hs</strong>.
             </p>
 
             <div style={{
               padding: '16px',
               borderRadius: '12px',
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
+              background: 'rgba(34, 197, 94, 0.12)',
+              border: '1px solid rgba(34, 197, 94, 0.4)',
               marginBottom: '24px',
               textAlign: 'left',
               fontSize: '0.9rem',
-              color: '#dcfce7'
+              color: 'var(--text-main)'
             }}>
-              <p style={{ fontWeight: 600, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <p style={{ fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a' }}>
                 <Sparkles size={16} /> ¡Paso Final Recomendado!
               </p>
-              Envíanos un WhatsApp ahora con 1 solo clic para notificarnos al instante y asegurar tu lugar rápidamente.
+              <span style={{ color: 'var(--text-main)', opacity: 0.9 }}>
+                Envíanos un WhatsApp ahora con 1 solo clic para notificarnos al instante y asegurar tu lugar rápidamente.
+              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
