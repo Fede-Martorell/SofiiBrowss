@@ -1014,9 +1014,9 @@ export function App() {
               target="_blank"
               rel="noreferrer"
               className="btn-primary"
-              style={{ display: 'inline-flex', textDecoration: 'none' }}
+              style={{ display: 'inline-flex', textDecoration: 'none', alignItems: 'center', gap: '8px' }}
             >
-              Consultar por WhatsApp Directo
+              <MessageSquare size={18} /> Consultar por WhatsApp Directo
             </a>
           </div>
         </div>
@@ -1085,12 +1085,13 @@ export function App() {
           width: '58px',
           height: '58px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+          background: 'linear-gradient(135deg, #b87b32 0%, #8a571c 100%)',
           color: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 6px 25px rgba(37, 211, 102, 0.45)',
+          boxShadow: '0 6px 25px rgba(184, 123, 50, 0.45)',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
           zIndex: 990,
           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           textDecoration: 'none'
@@ -1099,7 +1100,7 @@ export function App() {
         onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         title="Consultar por WhatsApp"
       >
-        <MessageSquare size={28} style={{ fill: '#ffffff' }} />
+        <MessageSquare size={26} style={{ fill: '#ffffff' }} />
       </a>
 
       {/* BOOKING MODAL */}
