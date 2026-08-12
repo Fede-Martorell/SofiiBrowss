@@ -403,60 +403,34 @@ export function App() {
           </div>
 
           {/* Header Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Theme Toggle Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Theme Toggle Button (Icon only) */}
             <button
               onClick={toggleTheme}
               className="btn-secondary"
               style={{
-                padding: '6px 12px',
-                fontSize: '0.8rem',
-                borderColor: 'var(--glass-border)',
-                color: 'var(--text-main)'
+                padding: '8px',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderColor: 'var(--glass-border)'
               }}
-              title={theme === 'dark' ? 'Cambiar a Modo Claro / Nude Elegante' : 'Cambiar a Modo Noche / Noche Vibe'}
+              title={theme === 'dark' ? 'Cambiar a Modo Claro / Nude' : 'Cambiar a Modo Noche'}
             >
-              {theme === 'dark' ? <Sun size={15} style={{ color: '#d8a563' }} /> : <Moon size={15} style={{ color: '#d8a563' }} />}
-              <span style={{ color: 'var(--text-main)' }}>{theme === 'dark' ? 'Modo Claro' : 'Modo Noche'}</span>
+              {theme === 'dark' ? <Sun size={18} style={{ color: '#d8a563' }} /> : <Moon size={18} style={{ color: '#d8a563' }} />}
             </button>
 
+            {/* Contacto Button (Scrolls to Footer) */}
             <a
-              href={`https://instagram.com/${settings.instagram}`}
-              target="_blank"
-              rel="noreferrer"
+              href="#contacto"
               className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--text-main)' }}
+              style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--text-main)', textDecoration: 'none' }}
             >
-              <Instagram size={14} style={{ color: '#d8a563' }} /> <span style={{ color: 'var(--text-main)' }}>Instagram</span>
+              <Phone size={14} style={{ color: '#d8a563' }} /> Contacto
             </a>
-
-            <button
-              onClick={() => openAuthModal('staff')}
-              className="btn-secondary"
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.8rem',
-                borderColor: 'var(--glass-border)',
-                color: 'var(--text-main)'
-              }}
-              title="Acceso para el equipo del salón"
-            >
-              <Users size={14} style={{ color: '#d8a563' }} /> <span style={{ color: 'var(--text-main)' }}>Equipo</span>
-            </button>
-
-            <button
-              onClick={() => openAuthModal('owner')}
-              className="btn-secondary"
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.8rem',
-                borderColor: 'var(--glass-border)',
-                color: 'var(--text-main)'
-              }}
-              title="Acceso exclusivo para la dueña"
-            >
-              <Lock size={14} style={{ color: '#d8a563' }} /> <span style={{ color: 'var(--text-main)' }}>Dueña</span>
-            </button>
           </div>
         </div>
       </header>
@@ -972,7 +946,7 @@ export function App() {
       )}
 
       {/* FOOTER & CONTACT */}
-      <footer style={{
+      <footer id="contacto" style={{
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid var(--glass-border)',
@@ -1007,11 +981,25 @@ export function App() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Phone size={18} style={{ color: '#d8a563' }} />
-                <span style={{ color: 'var(--text-main)' }}>WhatsApp: {settings.phoneWhatsApp}</span>
+                <a 
+                  href={`https://wa.me/${settings.phoneWhatsApp.replace(/[^0-9]/g, '')}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ color: 'var(--text-main)', textDecoration: 'none' }}
+                >
+                  WhatsApp: {settings.phoneWhatsApp}
+                </a>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Instagram size={18} style={{ color: '#d8a563' }} />
-                <span style={{ color: 'var(--text-main)' }}>@{settings.instagram}</span>
+                <a 
+                  href={`https://instagram.com/${settings.instagram}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ color: 'var(--text-main)', textDecoration: 'none' }}
+                >
+                  @{settings.instagram}
+                </a>
               </div>
             </div>
           </div>
@@ -1026,10 +1014,49 @@ export function App() {
               target="_blank"
               rel="noreferrer"
               className="btn-primary"
-              style={{ display: 'inline-flex' }}
+              style={{ display: 'inline-flex', textDecoration: 'none' }}
             >
               Consultar por WhatsApp Directo
             </a>
+          </div>
+        </div>
+
+        {/* ADMIN ACCESS HELLCARD */}
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto 30px auto',
+          padding: '20px',
+          borderRadius: '16px',
+          background: 'rgba(0, 0, 0, 0.25)',
+          border: '1px solid var(--glass-border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Lock size={20} style={{ color: '#d8a563' }} />
+            <div>
+              <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem', display: 'block' }}>Portal de Gestión Interno</strong>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Acceso exclusivo para Sofi y su equipo</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => openAuthModal('staff')}
+              className="btn-secondary"
+              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+            >
+              <Users size={14} style={{ color: '#d8a563' }} /> Modo Equipo
+            </button>
+            <button
+              onClick={() => openAuthModal('owner')}
+              className="btn-secondary"
+              style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+            >
+              <Lock size={14} style={{ color: '#d8a563' }} /> Panel Dueña
+            </button>
           </div>
         </div>
 
