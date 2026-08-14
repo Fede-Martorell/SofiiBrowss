@@ -83,7 +83,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
           objectFit: 'cover',
           transition: 'transform 0.4s ease, opacity 0.3s ease',
           userSelect: 'none',
-          WebkitUserDrag: 'none'
         }}
       />
 
