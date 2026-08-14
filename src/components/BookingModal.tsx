@@ -122,42 +122,31 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+    <div className="modal-overlay booking-modal-overlay" style={{
       background: 'rgba(0,0,0,0.8)',
       backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
+      zIndex: 2000
     }}>
-      <div className="glass-panel animate-fade-in" style={{
-        maxWidth: '550px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        padding: '32px',
+      <div className="glass-panel animate-fade-in modal-panel booking-modal-panel" style={{
+        padding: '28px 22px',
         position: 'relative',
         background: 'var(--glass-bg)',
         border: '1px solid var(--glass-border)',
         boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)'
       }}>
         {/* Close Button */}
-        <button 
+        <button
+          className="modal-close-button"
           onClick={onClose}
+          aria-label="Cerrar"
           style={{
             position: 'absolute',
-            top: '20px',
-            right: '20px',
+            top: '8px',
+            right: '8px',
             background: 'none',
             border: 'none',
             color: 'var(--text-muted)',
-            fontSize: '1.5rem',
+            fontSize: '1.4rem',
             cursor: 'pointer'
           }}
         >
@@ -165,7 +154,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
         </button>
 
         {step !== 3 && (
-          <div style={{ marginBottom: '24px' }}>
+          <div className="booking-modal-heading" style={{ marginBottom: '24px', paddingRight: '36px' }}>
             <span style={{
               display: 'inline-block',
               padding: '4px 12px',
@@ -179,7 +168,9 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
             }}>
               Paso {step} de 2
             </span>
-            <h2 style={{ fontSize: '1.5rem', color: 'var(--text-main)', fontWeight: 700 }}>Reservar: {service.name}</h2>
+            <h2 style={{ fontSize: 'clamp(1.15rem, 4.5vw, 1.5rem)', color: 'var(--text-main)', fontWeight: 700, lineHeight: 1.25 }}>
+              Reservar: {service.name}
+            </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               Duración: {service.durationMinutes} min • ${service.price.toLocaleString('es-AR')}
             </p>
@@ -208,7 +199,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                   <Clock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom', color: 'var(--primary)' }} />
                   Seleccioná un horario disponible
                 </label>
-                <div style={{
+                <div className="booking-time-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
                   gap: '10px',
@@ -309,7 +300,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <div className="modal-actions booking-form-actions" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button 
                 type="button" 
                 onClick={() => setStep(1)} 
@@ -400,9 +391,9 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 📅 Recordar en mi Google Calendar
               </a>
 
-              <button 
-                onClick={onClose}
+              <button
                 className="btn-secondary"
+                onClick={onClose}
                 style={{ justifyContent: 'center' }}
               >
                 Cerrar ventana
