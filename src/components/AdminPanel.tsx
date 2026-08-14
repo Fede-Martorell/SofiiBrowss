@@ -217,12 +217,15 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
   };
 
   return (
-    <div style={{
+    <div className="admin-shell" style={{
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
+      width: '100%',
+      maxWidth: '100%',
+      height: '100dvh',
       background: 'var(--secondary)',
       backdropFilter: 'blur(16px)',
       zIndex: 2000,
@@ -231,8 +234,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
       overflow: 'hidden'
     }}>
       {/* Header Admin */}
-      <div style={{
-        padding: '16px 24px',
+      <div className="admin-header-row" style={{
+        padding: '14px 20px',
         background: 'var(--glass-bg)',
         borderBottom: '1px solid var(--glass-border)',
         display: 'flex',
@@ -241,24 +244,25 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
         flexWrap: 'wrap',
         gap: '12px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 auto' }}>
           <div style={{
             background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
             padding: '8px',
             borderRadius: '10px',
             color: '#1f1412',
-            display: 'flex'
+            display: 'flex',
+            flexShrink: 0
           }}>
             <Sparkles size={22} />
           </div>
-          <div>
-            <h2 style={{ fontSize: '1.2rem', color: 'var(--text-main)', margin: 0, fontWeight: 700 }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontSize: 'clamp(0.95rem, 2.4vw, 1.2rem)', color: 'var(--text-main)', margin: 0, fontWeight: 700, lineHeight: 1.2 }}>
               {userRole === 'owner' ? 'Panel de Control (Dueña)' : 'Panel de Turnos (Equipo)'}
             </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>
               {userRole === 'owner'
-                ? 'Gestioná tus turnos, catálogo, fotos y colores'
-                : 'Consulta y confirmá los turnos agendados por las clientas'}
+                ? 'Gestioná turnos, catálogo, fotos y colores'
+                : 'Consulta y confirmá los turnos agendados'}
             </p>
           </div>
         </div>
@@ -409,11 +413,11 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
         </div>
 
         {/* Content View */}
-        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        <div className="admin-content" style={{ flex: 1, padding: '24px', overflowY: 'auto', minWidth: 0 }}>
           {/* BOOKINGS TAB */}
           {activeTab === 'bookings' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)', fontWeight: 700 }}>Gestión de Turnos</h3>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Total: {bookings.length} turnos</span>
               </div>
@@ -430,20 +434,18 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       key={booking.id}
                       className="glass-panel"
                       style={{
-                        padding: '16px 20px',
+                        padding: '14px 16px',
                         display: 'flex',
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '16px',
+                        flexDirection: 'column',
+                        gap: '12px',
                         borderColor: booking.status === 'confirmed' ? 'rgba(34, 197, 94, 0.4)' : 'var(--glass-border)'
                       }}
                     >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                          <strong style={{ fontSize: '1.1rem', color: 'var(--text-main)' }}>{booking.clientName}</strong>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)', overflowWrap: 'anywhere' }}>{booking.clientName}</strong>
                           <span style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.72rem',
                             padding: '2px 8px',
                             borderRadius: '12px',
                             background: booking.status === 'confirmed' ? 'rgba(34, 197, 94, 0.2)' : booking.status === 'cancelled' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
@@ -458,14 +460,15 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
                           fontWeight: 700,
-                          fontSize: '0.98rem'
+                          fontSize: '0.95rem',
+                          margin: 0
                         }}>
                           {booking.serviceName}
                         </p>
-                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                          <span><Calendar size={14} style={{ verticalAlign: 'text-bottom', color: '#d8a563' }} /> {booking.date}</span>
-                          <span><Clock size={14} style={{ verticalAlign: 'text-bottom', color: '#d8a563' }} /> {booking.time} hs</span>
-                          <span><Phone size={14} style={{ verticalAlign: 'text-bottom', color: '#d8a563' }} /> {booking.clientPhone}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Calendar size={14} style={{ color: '#d8a563' }} /> {booking.date}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Clock size={14} style={{ color: '#d8a563' }} /> {booking.time} hs</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', overflowWrap: 'anywhere' }}><Phone size={14} style={{ color: '#d8a563' }} /> {booking.clientPhone}</span>
                         </div>
                         {booking.notes && (
                           <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '4px' }}>
@@ -474,22 +477,23 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <a
                           href={`https://wa.me/${booking.clientPhone.replace(/[^0-9]/g, '')}`}
                           target="_blank"
                           rel="noreferrer"
                           style={{
-                            padding: '8px 14px',
+                            padding: '8px 12px',
                             borderRadius: '8px',
                             background: 'rgba(34, 197, 94, 0.15)',
                             color: '#4ade80',
                             textDecoration: 'none',
-                            fontSize: '0.85rem',
-                            display: 'flex',
+                            fontSize: '0.82rem',
+                            display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            fontWeight: 500
+                            fontWeight: 500,
+                            minHeight: 36
                           }}
                         >
                           <MessageSquare size={14} /> WhatsApp
@@ -500,27 +504,29 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                             onClick={() => handleBookingStatus(booking, 'confirmed')}
                             className="btn-secondary"
                             style={{
-                              padding: '8px 14px',
+                              padding: '8px 12px',
                               color: '#4ade80',
                               borderColor: 'rgba(34,197,94,0.4)',
                               background: 'rgba(34, 197, 94, 0.15)',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: '6px',
                               fontWeight: 600,
-                              fontSize: '0.85rem'
+                              fontSize: '0.82rem',
+                              minHeight: 36
                             }}
                             title="Confirmar y enviar WhatsApp cariñoso"
                           >
-                            <Check size={16} /> Confirmar por WhatsApp
+                            <Check size={16} /> Confirmar
                           </button>
                         )}
 
                         <button
                           onClick={() => handleDeleteBooking(booking.id)}
                           className="btn-danger"
-                          style={{ padding: '8px 12px' }}
+                          style={{ padding: '8px 12px', minHeight: 36, minWidth: 36 }}
                           title="Eliminar"
+                          aria-label="Eliminar turno"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -535,7 +541,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           {/* SERVICES TAB */}
           {activeTab === 'services' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)', fontWeight: 700 }}>Servicios y Lista de Precios</h3>
                 <button
                   onClick={() => setEditingService({ category: 'lashes', durationMinutes: 60, price: 15000, popular: false })}
@@ -558,7 +564,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                   <h4 style={{ color: '#fff', marginBottom: '16px' }}>
                     {editingService.id ? 'Editar Servicio' : 'Nuevo Servicio'}
                   </h4>
-                  <form onSubmit={handleSaveService} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <form onSubmit={handleSaveService} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Nombre del servicio</label>
                       <input
@@ -766,7 +772,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
                 {services.map((svc) => (
                   <div key={svc.id} className="glass-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
@@ -816,7 +822,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           {/* GALLERY TAB */}
           {activeTab === 'gallery' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.4rem', color: '#fff' }}>Galería de Trabajos</h3>
                 <button
                   onClick={() => setEditingGallery({ category: 'lashes', imageUrl: '', title: '' })}
@@ -975,7 +981,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: '16px' }}>
                 {gallery.map((item) => (
                   <div key={item.id} className="glass-card" style={{ overflow: 'hidden', position: 'relative' }}>
                     <img
@@ -1002,7 +1008,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           {/* REVIEWS TAB */}
           {activeTab === 'reviews' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)', fontWeight: 700 }}>Gestión de Reseñas de Clientas</h3>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Total: {reviews.length} opiniones</span>
               </div>
@@ -1013,7 +1019,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                   <p>Aún no hay reseñas enviadas.</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
                   {reviews.map((rev) => (
                     <div key={rev.id} className="glass-card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
                       <div>
@@ -1128,7 +1134,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                   <h4 style={{ color: '#d8a563', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
                     <Clock size={18} style={{ color: '#d8a563' }} /> Configuración de Horarios de Atención
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Hora de Apertura (Ej: 9 hs)</label>
                       <input
@@ -1201,39 +1207,41 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                   <h4 style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Palette size={18} /> Paleta de Colores
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <label style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Color Principal</label>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <input
                           type="color"
                           value={tempSettings.primaryColor}
                           onChange={(e) => setTempSettings({ ...tempSettings, primaryColor: e.target.value })}
-                          style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                          style={{ width: '40px', height: '40px', flexShrink: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }}
                         />
                         <input
                           type="text"
                           className="custom-input"
                           value={tempSettings.primaryColor}
                           onChange={(e) => setTempSettings({ ...tempSettings, primaryColor: e.target.value })}
+                          style={{ minWidth: 0, flex: '1 1 100px' }}
                         />
                       </div>
                     </div>
 
                     <div>
                       <label style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Color Secundario / Acento</label>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <input
                           type="color"
                           value={tempSettings.accentColor}
                           onChange={(e) => setTempSettings({ ...tempSettings, accentColor: e.target.value })}
-                          style={{ width: '40px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                          style={{ width: '40px', height: '40px', flexShrink: 0, border: 'none', borderRadius: '8px', cursor: 'pointer' }}
                         />
                         <input
                           type="text"
                           className="custom-input"
                           value={tempSettings.accentColor}
                           onChange={(e) => setTempSettings({ ...tempSettings, accentColor: e.target.value })}
+                          style={{ minWidth: 0, flex: '1 1 100px' }}
                         />
                       </div>
                     </div>

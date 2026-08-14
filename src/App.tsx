@@ -42,14 +42,14 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Auto slide on hover
+  // Auto slide on hover (desktop) and on tap (mobile / touch)
   useEffect(() => {
-    if (!isHovered || images.length <= 1) return;
+    if (images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 1800);
+    }, 2200);
     return () => clearInterval(interval);
-  }, [isHovered, images.length]);
+  }, [images.length]);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,11 +74,16 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
       <img
         src={images[currentIndex]}
         alt={`${alt} - Foto ${currentIndex + 1}`}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          transition: 'transform 0.4s ease, opacity 0.3s ease'
+          transition: 'transform 0.4s ease, opacity 0.3s ease',
+          userSelect: 'none',
+          WebkitUserDrag: 'none'
         }}
       />
 
@@ -87,6 +92,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
         <>
           <button
             onClick={handlePrev}
+            aria-label="Foto anterior"
             style={{
               position: 'absolute',
               top: '50%',
@@ -96,21 +102,23 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
               color: '#fff',
               border: 'none',
               borderRadius: '50%',
-              width: '28px',
-              height: '28px',
+              width: '32px',
+              height: '32px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              opacity: isHovered ? 1 : 0.4,
+              opacity: isHovered ? 1 : 0.85,
               transition: 'opacity 0.2s',
-              zIndex: 3
+              zIndex: 3,
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           <button
             onClick={handleNext}
+            aria-label="Foto siguiente"
             style={{
               position: 'absolute',
               top: '50%',
@@ -120,18 +128,19 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
               color: '#fff',
               border: 'none',
               borderRadius: '50%',
-              width: '28px',
-              height: '28px',
+              width: '32px',
+              height: '32px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              opacity: isHovered ? 1 : 0.4,
+              opacity: isHovered ? 1 : 0.85,
               transition: 'opacity 0.2s',
-              zIndex: 3
+              zIndex: 3,
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
 
           {/* Dots Indicator */}
@@ -246,8 +255,17 @@ export function App() {
 
   useEffect(() => {
     localStorage.setItem('app_theme', theme);
-    document.body.className = theme === 'light' ? 'light-mode' : '';
+    const isLight = theme === 'light';
+    document.documentElement.classList.toggle('light-mode', isLight);
+    document.body.classList.toggle('light-mode', isLight);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isLight ? '#f4ebd9' : '#241815');
   }, [theme]);
+
+  const isAnyModalOpen = Boolean(selectedService) || isReviewModalOpen || isAdminOpen;
+  useEffect(() => {
+    document.body.classList.toggle('modal-open', isAnyModalOpen);
+    return () => document.body.classList.remove('modal-open');
+  }, [isAnyModalOpen]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -330,22 +348,24 @@ export function App() {
     : services.filter(s => s.category === activeCategoryFilter);
 
   return (
-    <div style={{
+    <div className="app-shell" style={{
       '--primary': settings.primaryColor,
       '--accent': settings.accentColor,
-      fontFamily: settings.fontFamily
+      fontFamily: settings.fontFamily,
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden'
     } as React.CSSProperties}>
 
       {/* Header / Navbar */}
-      <header style={{
+      <header className="site-header" style={{
         position: 'sticky',
         top: 0,
         zIndex: 1000,
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--glass-border)',
-        padding: '12px 16px',
-        transition: 'all 0.4s ease'
+        padding: '12px 16px'
       }}>
         <div style={{
           maxWidth: '1200px',
@@ -353,24 +373,27 @@ export function App() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px'
+          flexWrap: 'nowrap',
+          gap: '8px',
+          minWidth: 0
         }}>
           {/* Business Logo / Name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div style={{
-              padding: '6px 14px',
+              padding: '6px 10px',
               borderRadius: '12px',
               background: 'var(--glass-bg)',
               border: '1px solid var(--glass-border)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+              maxWidth: '100%'
             }}>
               {/* Arch Curve */}
               <div style={{
-                width: '65px',
+                width: '60px',
+                maxWidth: '100%',
                 height: '4px',
                 borderTop: '2.5px solid #d8a563',
                 borderRadius: '100px 100px 0 0',
@@ -378,16 +401,17 @@ export function App() {
                 marginBottom: '1px'
               }} />
               <span style={{
-                fontSize: '1.05rem',
+                fontSize: 'clamp(0.95rem, 2.4vw, 1.05rem)',
                 fontWeight: 700,
                 fontFamily: "'Playfair Display', serif",
                 color: 'var(--text-main)',
-                lineHeight: 1.1
+                lineHeight: 1.1,
+                whiteSpace: 'nowrap'
               }}>
                 Sofibrowss
               </span>
               <span style={{
-                fontSize: '0.55rem',
+                fontSize: '0.5rem',
                 letterSpacing: '2.5px',
                 textTransform: 'uppercase',
                 background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
@@ -395,7 +419,8 @@ export function App() {
                 WebkitTextFillColor: 'transparent',
                 fontWeight: 700,
                 marginTop: '1px',
-                display: 'inline-block'
+                display: 'inline-block',
+                whiteSpace: 'nowrap'
               }}>
                 services
               </span>
@@ -403,7 +428,7 @@ export function App() {
           </div>
 
           {/* Header Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Theme Toggle Button (Icon only) */}
             <button
               onClick={toggleTheme}
@@ -436,9 +461,9 @@ export function App() {
       </header>
 
       {/* HERO SECTION */}
-      <section style={{
+      <section className="hero-section" style={{
         position: 'relative',
-        padding: '80px 24px 60px 24px',
+        padding: 'clamp(40px, 8vw, 80px) clamp(14px, 4vw, 24px) clamp(36px, 6vw, 60px) clamp(14px, 4vw, 24px)',
         maxWidth: '1200px',
         margin: '0 auto',
         textAlign: 'center'
@@ -449,24 +474,25 @@ export function App() {
             display: 'inline-flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '24px 36px',
-            borderRadius: '24px',
+            padding: 'clamp(16px, 4vw, 24px) clamp(20px, 5vw, 36px)',
+            borderRadius: 'clamp(18px, 4vw, 24px)',
             background: 'var(--glass-bg)',
             border: '1px solid var(--glass-border)',
             boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
-            backdropFilter: 'blur(20px)'
+            backdropFilter: 'blur(20px)',
+            maxWidth: '100%'
           }}>
             {/* Arch Logo Graphic */}
             <div style={{
-              width: '180px',
-              height: '8px',
+              width: 'clamp(120px, 35vw, 180px)',
+              height: 'clamp(6px, 1vw, 8px)',
               borderTop: '3px solid #d8a563',
               borderRadius: '100px 100px 0 0',
               marginBottom: '6px',
               background: 'linear-gradient(90deg, transparent, #f5d796, #d8a563, transparent)'
             }} />
             <h2 style={{
-              fontSize: '2.6rem',
+              fontSize: 'clamp(1.8rem, 7vw, 2.6rem)',
               fontWeight: 700,
               fontFamily: "'Playfair Display', serif",
               color: 'var(--text-main)',
@@ -477,34 +503,37 @@ export function App() {
               Sofibrow
             </h2>
             <span style={{
-              fontSize: '0.85rem',
-              letterSpacing: '5px',
+              fontSize: 'clamp(0.65rem, 2vw, 0.85rem)',
+              letterSpacing: 'clamp(3px, 1vw, 5px)',
               textTransform: 'uppercase',
               background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               marginTop: '4px',
               fontWeight: 700,
-              display: 'inline-block'
+              display: 'inline-block',
+              whiteSpace: 'nowrap'
             }}>
               s e r v i c e s
             </span>
           </div>
         </div>
 
-        <div style={{
+        <div className="hero-badge" style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '8px 22px',
+          padding: '8px 18px',
           borderRadius: '30px',
           background: 'var(--glass-bg)',
           border: '1.5px solid #d8a563',
           boxShadow: '0 4px 20px rgba(216, 165, 99, 0.25)',
-          fontSize: '0.9rem',
+          fontSize: '0.85rem',
           fontWeight: 700,
           marginBottom: '20px',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(10px)',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}>
           <Star size={16} style={{ color: '#b87b32', fill: '#b87b32' }} />
           <span style={{
@@ -517,11 +546,12 @@ export function App() {
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(2rem, 4vw, 3.2rem)',
+          fontSize: 'clamp(1.7rem, 5.5vw, 3.2rem)',
           fontWeight: 800,
           color: 'var(--text-main)',
           marginBottom: '20px',
-          lineHeight: 1.15
+          lineHeight: 1.15,
+          padding: '0 4px'
         }}>
           {settings.tagline}
         </h1>
@@ -537,48 +567,48 @@ export function App() {
         </p>
 
         {/* Highlights Banner */}
-        <div style={{
+        <div className="hero-highlights" style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '24px',
+          gap: 'clamp(10px, 2vw, 24px)',
           flexWrap: 'wrap',
           maxWidth: '900px',
           margin: '0 auto'
         }}>
-          <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Award size={24} style={{ color: '#d8a563' }} />
-            <div style={{ textAlign: 'left' }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.95rem' }}>Técnicas Profesionales</strong>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Materiales 100% aprobados</span>
+          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
+            <Award size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
+            <div style={{ textAlign: 'left', minWidth: 0 }}>
+              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Técnicas Profesionales</strong>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Materiales 100% aprobados</span>
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Calendar size={24} style={{ color: '#d8a563' }} />
-            <div style={{ textAlign: 'left' }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.95rem' }}>Turnos Instantáneos</strong>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Notificación por WhatsApp</span>
+          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
+            <Calendar size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
+            <div style={{ textAlign: 'left', minWidth: 0 }}>
+              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Turnos Instantáneos</strong>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Notificación por WhatsApp</span>
             </div>
           </div>
 
-          <div className="glass-card" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <MapPin size={24} style={{ color: '#d8a563' }} />
-            <div style={{ textAlign: 'left' }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.95rem' }}>Ubicación Céntrica</strong>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{settings.location}</span>
+          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
+            <MapPin size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
+            <div style={{ textAlign: 'left', minWidth: 0 }}>
+              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Ubicación Céntrica</strong>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{settings.location}</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* SERVICES & BOOKING SECTION */}
-      <section id="servicios" style={{ maxWidth: '1200px', margin: '40px auto 80px auto', padding: '0 24px' }}>
+      <section id="servicios" className="content-section services-section" style={{ maxWidth: '1200px', margin: '40px auto 80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '2.5rem', color: 'var(--text-main)', marginBottom: '12px' }}>Nuestros Servicios & Precios</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>Elegí el tratamiento ideal para tus pestañas y cejas</p>
+          <h2 className="section-title" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', color: 'var(--text-main)', marginBottom: '12px' }}>Nuestros Servicios & Precios</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.92rem, 2.5vw, 1.05rem)' }}>Elegí el tratamiento ideal para tus pestañas y cejas</p>
 
           {/* Category Tabs */}
-          <div style={{
+          <div className="category-tabs" style={{
             display: 'flex',
             justifyContent: 'center',
             gap: '10px',
@@ -620,15 +650,15 @@ export function App() {
         </div>
 
         {/* Services Grid */}
-        <div style={{
+        <div className="services-grid" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '24px'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+          gap: 'clamp(14px, 2.5vw, 24px)'
         }}>
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="glass-card"
+              className="glass-card service-card"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -660,9 +690,9 @@ export function App() {
                 height="200px"
               />
 
-              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="service-card-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                  <h3 style={{ fontSize: '1.3rem', color: 'var(--text-main)', fontWeight: 700 }}>{service.name}</h3>
+                  <h3 style={{ fontSize: '1.25rem', color: 'var(--text-main)', fontWeight: 700, minWidth: 0, overflowWrap: 'anywhere' }}>{service.name}</h3>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -688,7 +718,7 @@ export function App() {
 
                 <button
                   onClick={() => setSelectedService(service)}
-                  className="btn-primary"
+                  className="btn-primary booking-trigger"
                   style={{ width: '100%', justifyContent: 'center' }}
                 >
                   Sacar Turno <ChevronRight size={18} />
@@ -700,7 +730,7 @@ export function App() {
       </section>
 
       {/* GALLERY / PORTFOLIO SECTION */}
-      <section style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px' }}>
+      <section className="content-section gallery-section" style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 style={{ fontSize: '2.2rem', color: 'var(--text-main)', marginBottom: '10px' }}>Trabajos Realizados</h2>
           <p style={{ color: 'var(--text-muted)' }}>Resultados reales de nuestras clientas de pestañas y cejas</p>
@@ -708,8 +738,8 @@ export function App() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: '20px'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 240px), 1fr))',
+          gap: 'clamp(12px, 2.5vw, 20px)'
         }}>
           {gallery.map((item) => (
             <div
@@ -746,14 +776,14 @@ export function App() {
         </div>
 
         {/* CLIENT REVIEWS & TESTIMONIALS SECTION */}
-        <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px dashed var(--glass-border)' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
+        <div className="reviews-section" style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px dashed var(--glass-border)' }}>
+          <div className="reviews-header" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
             marginBottom: '32px',
             flexWrap: 'wrap',
-            gap: '16px' 
+            gap: '16px'
           }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -783,8 +813,8 @@ export function App() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-            gap: '20px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
+            gap: 'clamp(12px, 2.5vw, 20px)'
           }}>
             {reviews.map((rev) => (
               <div 
@@ -837,28 +867,32 @@ export function App() {
 
       {/* LEAVE A REVIEW MODAL */}
       {isReviewModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+        <div className="modal-overlay review-modal-overlay" style={{
           background: 'rgba(15, 10, 8, 0.82)',
           backdropFilter: 'blur(8px)',
-          zIndex: 2000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
+          zIndex: 2000
         }}>
-          <div className="glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', fontWeight: 700, margin: 0 }}>
+          <div className="glass-panel modal-panel review-modal-panel" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '12px' }}>
+              <h3 style={{ fontSize: 'clamp(1.05rem, 3.5vw, 1.2rem)', color: 'var(--text-main)', fontWeight: 700, margin: 0 }}>
                 Dejar Opinión sobre tu Atención ✨
               </h3>
-              <button 
+              <button
                 onClick={() => setIsReviewModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                aria-label="Cerrar"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  minWidth: 36,
+                  minHeight: 36,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
               >
                 ✕
               </button>
@@ -928,7 +962,7 @@ export function App() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <div className="modal-actions review-modal-actions" style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
                   Publicar Reseña 💖
                 </button>
@@ -946,19 +980,18 @@ export function App() {
       )}
 
       {/* FOOTER & CONTACT */}
-      <footer id="contacto" style={{
+      <footer id="contacto" className="site-footer" style={{
         background: 'var(--glass-bg)',
         backdropFilter: 'blur(20px)',
         borderTop: '1px solid var(--glass-border)',
         padding: '60px 24px 30px 24px',
-        marginTop: '80px',
-        transition: 'all 0.4s ease'
+        marginTop: '80px'
       }}>
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
           gap: '40px',
           marginBottom: '40px'
         }}>
@@ -1022,7 +1055,7 @@ export function App() {
         </div>
 
         {/* DISCREET ADMIN ACCESS FOOTER LINK */}
-        <div style={{
+        <div className="footer-bottom-row" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           paddingTop: '24px',
@@ -1062,10 +1095,12 @@ export function App() {
         href={`https://wa.me/${settings.phoneWhatsApp}?text=Hola!%20Quisiera%20hacer%20una%20consulta%20sobre%20los%20servicios%20de%20pestañas%20y%20cejas%20✨`}
         target="_blank"
         rel="noopener noreferrer"
+        className="floating-whatsapp"
+        aria-label="Consultar por WhatsApp"
         style={{
           position: 'fixed',
-          bottom: '24px',
-          right: '24px',
+          bottom: 'calc(20px + var(--safe-bottom))',
+          right: 'calc(18px + var(--safe-right))',
           width: '58px',
           height: '58px',
           borderRadius: '50%',
@@ -1077,8 +1112,9 @@ export function App() {
           boxShadow: '0 6px 25px rgba(184, 123, 50, 0.45)',
           border: '1px solid rgba(255, 255, 255, 0.25)',
           zIndex: 990,
-          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-          textDecoration: 'none'
+          transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s',
+          textDecoration: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
         onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.12)')}
         onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
@@ -1101,24 +1137,13 @@ export function App() {
       {/* ADMIN PANEL OVERLAY / LOGIN MODAL */}
       {isAdminOpen && (
         !isAdminAuthenticated ? (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+          <div className="modal-overlay admin-login-overlay" style={{
             background: 'rgba(5, 8, 16, 0.88)',
             backdropFilter: 'blur(10px)',
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
+            zIndex: 2000
           }}>
-            <div className="glass-panel" style={{
-              maxWidth: '420px',
-              width: '100%',
-              padding: '32px',
+            <div className="glass-panel modal-panel admin-login-panel" style={{
+              padding: '28px 20px',
               background: 'var(--glass-bg)',
               border: '1px solid var(--glass-border)',
               boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
@@ -1126,10 +1151,12 @@ export function App() {
             }}>
               <button
                 onClick={() => setIsAdminOpen(false)}
+                className="modal-close-button"
+                aria-label="Cerrar"
                 style={{
                   position: 'absolute',
-                  top: '16px',
-                  right: '16px',
+                  top: '8px',
+                  right: '8px',
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-muted)',
@@ -1140,7 +1167,7 @@ export function App() {
                 ✕
               </button>
 
-              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <div className="reviews-grid" style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{
                   width: '56px',
                   height: '56px',
