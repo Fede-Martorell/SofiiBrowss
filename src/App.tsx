@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+
 import {
   DEFAULT_SETTINGS,
   INITIAL_SERVICES,
@@ -15,6 +16,7 @@ import type {
 } from './types';
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
+import { supabase } from './lib/supabase';
 import {
   Sparkles,
   Calendar,
@@ -42,7 +44,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Auto slide on hover (desktop) and on tap (mobile / touch)
   useEffect(() => {
     if (images.length <= 1) return;
     const interval = setInterval(() => {
@@ -86,7 +87,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
         }}
       />
 
-      {/* Navigation arrows if multiple images */}
       {images.length > 1 && (
         <>
           <button
@@ -142,7 +142,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
             <ChevronRight size={18} />
           </button>
 
-          {/* Dots Indicator */}
           <div style={{
             position: 'absolute',
             bottom: '8px',
@@ -182,7 +181,6 @@ const Instagram = ({ size = 18, style }: { size?: number; style?: React.CSSPrope
 );
 
 export function App() {
-  // LocalStorage initialization for persistent state
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('app_settings');
     return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
@@ -208,6 +206,56 @@ export function App() {
     return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
   });
 
+  // Cargar datos iniciales desde Supabase
+  useEffect(() => {
+    const fetchSupabaseData = async () => {
+      try {
+        // Cargar turnos
+        const { data: bookingsData, error: bError } = await supabase
+          .from('bookings')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (bookingsData && !bError && bookingsData.length > 0) {
+          setBookings(bookingsData.map(b => ({
+            id: b.id,
+            serviceId: b.service_id || '',
+            serviceName: b.service_name || '',
+            clientName: b.client_name || '',
+            clientPhone: b.client_phone || '',
+            date: b.appointment_date || b.date || '',
+            time: b.time || '',
+            notes: b.notes || '',
+            status: b.status || 'pending',
+            createdAt: b.created_at || new Date().toISOString()
+          })));
+        }
+
+        // Cargar reseñas si existen en Supabase
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (reviewsData && reviewsData.length > 0) {
+          setReviews(reviewsData.map(r => ({
+            id: r.id,
+            clientName: r.client_name || '',
+            serviceName: r.service_name || '',
+            rating: r.rating || 5,
+            comment: r.comment || '',
+            date: r.date || 'Reciente',
+            verified: r.verified ?? true
+          })));
+        }
+      } catch (err) {
+        console.error("Error al obtener datos de Supabase:", err);
+      }
+    };
+
+    fetchSupabaseData();
+  }, []);
+
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReview, setNewReview] = useState({
     clientName: '',
@@ -216,16 +264,13 @@ export function App() {
     comment: ''
   });
 
-  useEffect(() => {
-    localStorage.setItem('app_reviews', JSON.stringify(reviews));
-  }, [reviews]);
-
-  const handleAddReview = (e: React.FormEvent) => {
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.clientName.trim() || !newReview.comment.trim()) return;
 
+    const createdId = Date.now().toString();
     const created: Review = {
-      id: Date.now().toString(),
+      id: createdId,
       clientName: newReview.clientName,
       serviceName: newReview.serviceName,
       rating: newReview.rating,
@@ -234,12 +279,24 @@ export function App() {
       verified: true
     };
 
+    try {
+      await supabase.from('reviews').insert([{
+        client_name: newReview.clientName,
+        service_name: newReview.serviceName,
+        rating: newReview.rating,
+        comment: newReview.comment,
+        date: 'Reciente',
+        verified: true
+      }]);
+    } catch (err) {
+      console.error("Error guardando reseña:", err);
+    }
+
     setReviews([created, ...reviews]);
     setNewReview({ clientName: '', serviceName: 'Lifting de Pestañas + Tinte', rating: 5, comment: '' });
     setIsReviewModalOpen(false);
   };
 
-  // Modal & Theme & Admin view toggles
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('app_theme') as 'dark' | 'light') || 'dark';
   });
@@ -272,7 +329,7 @@ export function App() {
 
   const openAuthModal = (role: 'owner' | 'staff') => {
     setTargetRole(role);
-    setIsAdminAuthenticated(false); // Reset session when switching or re-opening
+    setIsAdminAuthenticated(false);
     setPasswordError('');
     setInputPassword('');
     setIsAdminOpen(true);
@@ -304,25 +361,8 @@ export function App() {
     }
   };
 
-  // Sync with LocalStorage
-  useEffect(() => {
-    localStorage.setItem('app_settings', JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem('app_services', JSON.stringify(services));
-  }, [services]);
-
-  useEffect(() => {
-    localStorage.setItem('app_gallery', JSON.stringify(gallery));
-  }, [gallery]);
-
-  useEffect(() => {
-    localStorage.setItem('app_bookings', JSON.stringify(bookings));
-  }, [bookings]);
-
-  // Handle new booking
-  const handleConfirmBooking = (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => {
+  // Guardar turnos en Supabase
+  const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => {
     if (!selectedService) return;
 
     const newBooking: Booking = {
@@ -338,10 +378,27 @@ export function App() {
       createdAt: new Date().toISOString()
     };
 
+    // Enviar a Supabase con los nombres exactos de columnas
+    const { data, error } = await supabase.from('bookings').insert([{
+      service_name: selectedService.name,
+      client_name: bookingData.clientName,
+      client_phone: bookingData.clientPhone,
+      appointment_date: bookingData.date,
+      appointment_time: bookingData.time,
+      notes: bookingData.notes,
+      status: 'pending'
+    }]).select();
+
+    if (error) {
+      console.error("Error al insertar en Supabase:", error);
+      alert("Error de Supabase: " + error.message);
+    } else if (data && data.length > 0) {
+      newBooking.id = data[0].id;
+    }
+
     setBookings([newBooking, ...bookings]);
   };
 
-  // Filtered Services
   const filteredServices = activeCategoryFilter === 'all'
     ? services
     : services.filter(s => s.category === activeCategoryFilter);
@@ -376,7 +433,6 @@ export function App() {
           gap: '8px',
           minWidth: 0
         }}>
-          {/* Business Logo / Name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div style={{
               padding: '6px 10px',
@@ -389,7 +445,6 @@ export function App() {
               boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
               maxWidth: '100%'
             }}>
-              {/* Arch Curve */}
               <div style={{
                 width: '60px',
                 maxWidth: '100%',
@@ -426,9 +481,7 @@ export function App() {
             </div>
           </div>
 
-          {/* Header Action Buttons */}
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            {/* Theme Toggle Button (Icon only) */}
             <button
               onClick={toggleTheme}
               className="btn-secondary"
@@ -447,7 +500,6 @@ export function App() {
               {theme === 'dark' ? <Sun size={18} style={{ color: '#d8a563' }} /> : <Moon size={18} style={{ color: '#d8a563' }} />}
             </button>
 
-            {/* Contacto Button (Scrolls to Footer) */}
             <a
               href="#contacto"
               className="btn-secondary"
@@ -467,7 +519,6 @@ export function App() {
         margin: '0 auto',
         textAlign: 'center'
       }}>
-        {/* Logo Badge in Hero */}
         <div style={{ marginBottom: '20px' }}>
           <div style={{
             display: 'inline-flex',
@@ -481,7 +532,6 @@ export function App() {
             backdropFilter: 'blur(20px)',
             maxWidth: '100%'
           }}>
-            {/* Arch Logo Graphic */}
             <div style={{
               width: 'clamp(120px, 35vw, 180px)',
               height: 'clamp(6px, 1vw, 8px)',
@@ -565,7 +615,6 @@ export function App() {
           Diseño personalizado de mirada, lifting de pestañas, extensiones y laminado de cejas profesional. Seleccioná tu turno en 1 minuto.
         </p>
 
-        {/* Highlights Banner */}
         <div className="hero-highlights" style={{
           display: 'flex',
           justifyContent: 'center',
@@ -600,13 +649,12 @@ export function App() {
         </div>
       </section>
 
-      {/* SERVICES & BOOKING SECTION */}
+      {/* SERVICES SECTION */}
       <section id="servicios" className="content-section services-section" style={{ maxWidth: '1200px', margin: '40px auto 80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 className="section-title" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', color: 'var(--text-main)', marginBottom: '12px' }}>Nuestros Servicios & Precios</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.92rem, 2.5vw, 1.05rem)' }}>Elegí el tratamiento ideal para tus pestañas y cejas</p>
 
-          {/* Category Tabs */}
           <div className="category-tabs" style={{
             display: 'flex',
             justifyContent: 'center',
@@ -648,7 +696,6 @@ export function App() {
           </div>
         </div>
 
-        {/* Services Grid */}
         <div className="services-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
@@ -728,7 +775,7 @@ export function App() {
         </div>
       </section>
 
-      {/* GALLERY / PORTFOLIO SECTION */}
+      {/* GALLERY SECTION */}
       <section className="content-section gallery-section" style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 style={{ fontSize: '2.2rem', color: 'var(--text-main)', marginBottom: '10px' }}>Trabajos Realizados</h2>
@@ -774,7 +821,7 @@ export function App() {
           ))}
         </div>
 
-        {/* CLIENT REVIEWS & TESTIMONIALS SECTION */}
+        {/* REVIEWS SECTION */}
         <div className="reviews-section" style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px dashed var(--glass-border)' }}>
           <div className="reviews-header" style={{
             display: 'flex',
@@ -816,7 +863,7 @@ export function App() {
             gap: 'clamp(12px, 2.5vw, 20px)'
           }}>
             {reviews.map((rev) => (
-              <div 
+              <div
                 key={rev.id}
                 className="glass-panel"
                 style={{
@@ -836,11 +883,11 @@ export function App() {
                       ))}
                     </div>
                     {rev.verified && (
-                      <span style={{ 
-                        fontSize: '0.72rem', 
-                        color: '#16a34a', 
-                        background: 'rgba(34, 197, 94, 0.12)', 
-                        padding: '2px 8px', 
+                      <span style={{
+                        fontSize: '0.72rem',
+                        color: '#16a34a',
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        padding: '2px 8px',
                         borderRadius: '10px',
                         fontWeight: 700
                       }}>
@@ -864,7 +911,7 @@ export function App() {
         </div>
       </section>
 
-      {/* LEAVE A REVIEW MODAL */}
+      {/* REVIEW MODAL */}
       {isReviewModalOpen && (
         <div className="modal-overlay review-modal-overlay" style={{
           background: 'rgba(15, 10, 8, 0.82)',
@@ -902,8 +949,8 @@ export function App() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-main)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
                   Tu Nombre
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="Ej: Sofia M."
                   className="custom-input"
@@ -916,7 +963,7 @@ export function App() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-main)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
                   Servicio Realizado
                 </label>
-                <select 
+                <select
                   className="custom-select"
                   value={newReview.serviceName}
                   onChange={(e) => setNewReview({ ...newReview, serviceName: e.target.value })}
@@ -933,15 +980,15 @@ export function App() {
                 </label>
                 <div style={{ display: 'flex', gap: '8px', cursor: 'pointer', marginTop: '4px' }}>
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star 
+                    <Star
                       key={star}
                       size={24}
                       onClick={() => setNewReview({ ...newReview, rating: star })}
-                      style={{ 
-                        color: star <= newReview.rating ? '#d8a563' : '#94a3b8', 
+                      style={{
+                        color: star <= newReview.rating ? '#d8a563' : '#94a3b8',
                         fill: star <= newReview.rating ? '#d8a563' : 'transparent',
                         transition: 'all 0.2s'
-                      }} 
+                      }}
                     />
                   ))}
                 </div>
@@ -951,7 +998,7 @@ export function App() {
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-main)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>
                   Tu Experiencia o Reseña
                 </label>
-                <textarea 
+                <textarea
                   rows={3}
                   required
                   placeholder="Contanos qué te pareció el resultado, la atención o la delicadeza..."
@@ -965,9 +1012,9 @@ export function App() {
                 <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
                   Publicar Reseña 💖
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsReviewModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsReviewModalOpen(false)}
                   className="btn-secondary"
                 >
                   Cancelar
@@ -1013,10 +1060,10 @@ export function App() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Phone size={18} style={{ color: '#d8a563' }} />
-                <a 
-                  href={`https://wa.me/${settings.phoneWhatsApp.replace(/[^0-9]/g, '')}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
+                <a
+                  href={`https://wa.me/${settings.phoneWhatsApp.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
                   style={{ color: 'var(--text-main)', textDecoration: 'none' }}
                 >
                   WhatsApp: {settings.phoneWhatsApp}
@@ -1024,10 +1071,10 @@ export function App() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Instagram size={18} style={{ color: '#d8a563' }} />
-                <a 
-                  href={`https://instagram.com/${settings.instagram}`} 
-                  target="_blank" 
-                  rel="noreferrer" 
+                <a
+                  href={`https://instagram.com/${settings.instagram}`}
+                  target="_blank"
+                  rel="noreferrer"
                   style={{ color: 'var(--text-main)', textDecoration: 'none' }}
                 >
                   @{settings.instagram}
@@ -1053,7 +1100,6 @@ export function App() {
           </div>
         </div>
 
-        {/* DISCREET ADMIN ACCESS FOOTER LINK */}
         <div className="footer-bottom-row" style={{
           maxWidth: '1200px',
           margin: '0 auto',
@@ -1182,7 +1228,6 @@ export function App() {
                   {targetRole === 'owner' ? <Lock size={28} /> : <Users size={28} />}
                 </div>
 
-                {/* Role Switcher Tabs inside Modal */}
                 <div style={{
                   display: 'flex',
                   gap: '6px',
