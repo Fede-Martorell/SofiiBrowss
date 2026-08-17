@@ -30,6 +30,8 @@ interface AdminPanelProps {
   onUpdateServices: (newServices: Service[]) => void;
   onUpdateGallery: (newGallery: GalleryItem[]) => void;
   onUpdateBookings: (newBookings: Booking[]) => void;
+  onDeleteBooking?: (id: string) => void;
+  onUpdateBookingStatus?: (id: string, status: 'confirmed' | 'cancelled') => void;
   onUpdateReviews?: (newReviews: Review[]) => void;
   onClose: () => void;
 }
@@ -45,17 +47,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateServices,
   onUpdateGallery,
   onUpdateBookings,
+  onDeleteBooking,
+  onUpdateBookingStatus,
   onUpdateReviews,
   onClose
 }) => {
   const [activeTab, setActiveTab] = useState<'bookings' | 'services' | 'gallery' | 'reviews' | 'settings'>('bookings');
-
-  // Form States for adding new items
   const [editingService, setEditingService] = useState<Partial<Service> | null>(null);
   const [editingGallery, setEditingGallery] = useState<Partial<GalleryItem> | null>(null);
   const [tempSettings, setTempSettings] = useState<AppSettings>({ ...settings });
 
-  // Review handlers
   const handleDeleteReview = (reviewId: string) => {
     if (onUpdateReviews) {
       onUpdateReviews(reviews.filter(r => r.id !== reviewId));
@@ -68,10 +69,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  // Bookings handlers
   const handleBookingStatus = (booking: Booking, newStatus: 'confirmed' | 'cancelled') => {
-    const updated = bookings.map(b => b.id === booking.id ? { ...b, status: newStatus } : b);
-    onUpdateBookings(updated);
+    if (onUpdateBookingStatus) {
+      onUpdateBookingStatus(booking.id, newStatus);
+    } else {
+      const updated = bookings.map(b => b.id === booking.id ? { ...b, status: newStatus } : b);
+      onUpdateBookings(updated);
+    }
 
     if (newStatus === 'confirmed') {
       const cleanPhone = booking.clientPhone.replace(/[^0-9]/g, '');
@@ -93,7 +97,11 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
 
   const handleDeleteBooking = (id: string) => {
     if (confirm('¿Estás segura de eliminar este turno de la lista?')) {
-      onUpdateBookings(bookings.filter(b => b.id !== id));
+      if (onDeleteBooking) {
+        onDeleteBooking(id); // 👈 Llama a la función que borra en Supabase
+      } else {
+        onUpdateBookings(bookings.filter(b => b.id !== id));
+      }
     }
   };
 

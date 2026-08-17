@@ -210,7 +210,6 @@ export function App() {
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
-        // Cargar turnos
         const { data: bookingsData, error: bError } = await supabase
           .from('bookings')
           .select('*')
@@ -224,14 +223,14 @@ export function App() {
             clientName: b.client_name || '',
             clientPhone: b.client_phone || '',
             date: b.appointment_date || b.date || '',
-            time: b.time || '',
+            // CORRECCIÓN AQUÍ: leer appointment_time o time indistintamente
+            time: b.appointment_time || b.time || '',
             notes: b.notes || '',
             status: b.status || 'pending',
             createdAt: b.created_at || new Date().toISOString()
           })));
         }
 
-        // Cargar reseñas si existen en Supabase
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('*')
@@ -244,8 +243,8 @@ export function App() {
             serviceName: r.service_name || '',
             rating: r.rating || 5,
             comment: r.comment || '',
-            date: r.date || 'Reciente',
-            verified: r.verified ?? true
+            date: r.display_date || r.date || 'Reciente',
+            verified: r.approved ?? r.verified ?? true
           })));
         }
       } catch (err) {
@@ -255,6 +254,28 @@ export function App() {
 
     fetchSupabaseData();
   }, []);
+
+  // 2. Handlers para sincronizar con Supabase desde el panel Admin
+  const handleDeleteBookingFromDb = async (id: string) => {
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', id);
+      if (error) throw error;
+      setBookings(prev => prev.filter(b => b.id !== id));
+    } catch (err: any) {
+      console.error("Error al eliminar turno:", err.message);
+      alert("No se pudo eliminar el turno de la base de datos: " + err.message);
+    }
+  };
+
+  const handleUpdateBookingStatusInDb = async (id: string, newStatus: 'confirmed' | 'cancelled') => {
+    try {
+      const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
+    } catch (err: any) {
+      console.error("Error al actualizar estado:", err.message);
+    }
+  };
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReview, setNewReview] = useState({
@@ -1328,6 +1349,8 @@ export function App() {
             onUpdateServices={setServices}
             onUpdateGallery={setGallery}
             onUpdateBookings={setBookings}
+            onDeleteBooking={handleDeleteBookingFromDb}
+            onUpdateBookingStatus={handleUpdateBookingStatusInDb}
             onUpdateReviews={setReviews}
             onClose={() => setIsAdminOpen(false)}
           />
