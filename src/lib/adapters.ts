@@ -88,7 +88,6 @@ export function dbToSettings(s: DbSettings): AppSettings {
     appointmentDurationStep: s.appointment_duration_step,
     autoConfirmWhatsApp: s.auto_confirm_whatsapp,
     notificationEmail: s.notification_email ?? undefined,
-    // adminPassword/staffPassword ya no se persisten acá.
   };
 }
 

@@ -1118,24 +1118,6 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       onChange={(e) => setTempSettings({ ...tempSettings, tagline: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>🔑 Contraseña de Dueña (Acceso Total)</label>
-                    <input
-                      type="text"
-                      className="custom-input"
-                      value={tempSettings.adminPassword || '47272278Sm@'}
-                      onChange={(e) => setTempSettings({ ...tempSettings, adminPassword: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>👥 Contraseña de Equipo / Empleadas (Acceso solo a Turnos)</label>
-                    <input
-                      type="text"
-                      className="custom-input"
-                      value={tempSettings.staffPassword || 'equipo'}
-                      onChange={(e) => setTempSettings({ ...tempSettings, staffPassword: e.target.value })}
-                    />
-                  </div>
                 </div>
 
                 <div className="glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>

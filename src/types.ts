@@ -45,8 +45,6 @@ export interface AppSettings {
   workEndHour: number;   // e.g. 19
   appointmentDurationStep: number; // in mins, e.g. 60
   autoConfirmWhatsApp: boolean;
-  adminPassword?: string;
-  staffPassword?: string;
   notificationEmail?: string;
 }
 
@@ -79,8 +77,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   workEndHour: 19,
   appointmentDurationStep: 60,
   autoConfirmWhatsApp: true,
-  adminPassword: "47272278Sm@",
-  staffPassword: "equipo"
 };
 
 export const INITIAL_SERVICES: Service[] = [
@@ -211,32 +207,5 @@ export const INITIAL_REVIEWS: Review[] = [
     comment: "Tenia miedo de que me pesaran las pestañas y nada que ver, livianísimas y súper tupidas. ¡Excelente calidad!",
     date: "Hace 2 semanas",
     verified: true
-  }
-];
-
-export const INITIAL_BOOKINGS: Booking[] = [
-  {
-    id: "b1",
-    serviceId: "1",
-    serviceName: "Lifting de Pestañas + Tinte",
-    clientName: "Sofia Martínez",
-    clientPhone: "+5491144445555",
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
-    time: "15:00",
-    notes: "Primera vez en el estudio",
-    status: "confirmed",
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: "b2",
-    serviceId: "6",
-    serviceName: "Combo VIP: Lash Lifting + Laminado Cejas",
-    clientName: "Camila Rodríguez",
-    clientPhone: "+5491122223333",
-    date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], // Day after tomorrow
-    time: "11:00",
-    notes: "Tiene evento el fin de semana",
-    status: "pending",
-    createdAt: new Date().toISOString()
   }
 ];

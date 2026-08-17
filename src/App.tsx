@@ -4,7 +4,6 @@ import {
   DEFAULT_SETTINGS,
   INITIAL_SERVICES,
   INITIAL_GALLERY,
-  INITIAL_BOOKINGS,
   INITIAL_REVIEWS
 } from './types';
 import type {
@@ -17,6 +16,8 @@ import type {
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
+import { fetchMyRole } from './lib/queries';
+import type { UserRole } from './lib/db';
 import {
   Sparkles,
   Calendar,
@@ -24,7 +25,6 @@ import {
   MapPin,
   Phone,
   Lock,
-  Users,
   Sun,
   Moon,
   ChevronRight,
@@ -196,10 +196,8 @@ export function App() {
     return saved ? JSON.parse(saved) : INITIAL_GALLERY;
   });
 
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    const saved = localStorage.getItem('app_bookings');
-    return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
-  });
+  // Los turnos nunca se guardan en el navegador ni se cargan para visitantes.
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
   const [reviews, setReviews] = useState<Review[]>(() => {
     const saved = localStorage.getItem('app_reviews');
@@ -210,27 +208,6 @@ export function App() {
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
-        const { data: bookingsData, error: bError } = await supabase
-          .from('bookings')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (bookingsData && !bError && bookingsData.length > 0) {
-          setBookings(bookingsData.map(b => ({
-            id: b.id,
-            serviceId: b.service_id || '',
-            serviceName: b.service_name || '',
-            clientName: b.client_name || '',
-            clientPhone: b.client_phone || '',
-            date: b.appointment_date || b.date || '',
-            // CORRECCIÓN AQUÍ: leer appointment_time o time indistintamente
-            time: b.appointment_time || b.time || '',
-            notes: b.notes || '',
-            status: b.status || 'pending',
-            createdAt: b.created_at || new Date().toISOString()
-          })));
-        }
-
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('*')
@@ -254,6 +231,28 @@ export function App() {
 
     fetchSupabaseData();
   }, []);
+
+  const loadAdminBookings = async () => {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('appointment_date', { ascending: true })
+      .order('appointment_time', { ascending: true });
+
+    if (error) throw error;
+    setBookings((data ?? []).map(b => ({
+      id: b.id,
+      serviceId: b.service_id ?? '',
+      serviceName: b.service_name,
+      clientName: b.client_name,
+      clientPhone: b.client_phone,
+      date: b.appointment_date,
+      time: b.appointment_time,
+      notes: b.notes ?? '',
+      status: b.status,
+      createdAt: b.created_at,
+    })));
+  };
 
   // 2. Handlers para sincronizar con Supabase desde el panel Admin
   const handleDeleteBookingFromDb = async (id: string) => {
@@ -289,31 +288,20 @@ export function App() {
     e.preventDefault();
     if (!newReview.clientName.trim() || !newReview.comment.trim()) return;
 
-    const createdId = Date.now().toString();
-    const created: Review = {
-      id: createdId,
-      clientName: newReview.clientName,
-      serviceName: newReview.serviceName,
-      rating: newReview.rating,
-      comment: newReview.comment,
-      date: 'Reciente',
-      verified: true
-    };
-
     try {
       await supabase.from('reviews').insert([{
         client_name: newReview.clientName,
         service_name: newReview.serviceName,
         rating: newReview.rating,
         comment: newReview.comment,
-        date: 'Reciente',
-        verified: true
+        display_date: 'Reciente',
+        approved: false
       }]);
     } catch (err) {
       console.error("Error guardando reseña:", err);
     }
 
-    setReviews([created, ...reviews]);
+    // La reseña queda pendiente de moderación y no se muestra hasta aprobarse.
     setNewReview({ clientName: '', serviceName: 'Lifting de Pestañas + Tinte', rating: 5, comment: '' });
     setIsReviewModalOpen(false);
   };
@@ -324,10 +312,11 @@ export function App() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<'owner' | 'staff'>('owner');
-  const [targetRole, setTargetRole] = useState<'owner' | 'staff'>('owner');
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [adminEmail, setAdminEmail] = useState<string>('');
   const [inputPassword, setInputPassword] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'lashes' | 'brows' | 'combo'>('all');
 
   useEffect(() => {
@@ -348,38 +337,54 @@ export function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  const openAuthModal = (role: 'owner' | 'staff') => {
-    setTargetRole(role);
-    setIsAdminAuthenticated(false);
+  const openAuthModal = async () => {
+    setIsLoggingIn(true);
     setPasswordError('');
     setInputPassword('');
     setIsAdminOpen(true);
+
+    try {
+      const role = await fetchMyRole();
+      setUserRole(role);
+      setIsAdminAuthenticated(role !== null);
+      if (role) await loadAdminBookings();
+    } catch {
+      setIsAdminAuthenticated(false);
+      setUserRole(null);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctAdminPassword = settings.adminPassword || '47272278Sm@';
-    const correctStaffPassword = settings.staffPassword || 'equipo';
+    setIsLoggingIn(true);
+    setPasswordError('');
 
-    if (targetRole === 'owner') {
-      if (inputPassword === correctAdminPassword) {
-        setUserRole('owner');
-        setIsAdminAuthenticated(true);
-        setPasswordError('');
-        setInputPassword('');
-      } else {
-        setPasswordError('Contraseña de Dueña incorrecta.');
-      }
-    } else {
-      if (inputPassword === correctStaffPassword || inputPassword === correctAdminPassword) {
-        setUserRole(inputPassword === correctAdminPassword ? 'owner' : 'staff');
-        setIsAdminAuthenticated(true);
-        setPasswordError('');
-        setInputPassword('');
-      } else {
-        setPasswordError('Contraseña de Equipo incorrecta.');
-      }
+    const { error } = await supabase.auth.signInWithPassword({
+      email: adminEmail.trim(),
+      password: inputPassword,
+    });
+
+    if (error) {
+      setPasswordError('Email o contraseña incorrectos.');
+      setIsLoggingIn(false);
+      return;
     }
+
+    const role = await fetchMyRole();
+    if (!role) {
+      await supabase.auth.signOut();
+      setPasswordError('Tu usuario no tiene un rol asignado. Pedile a la dueña que lo configure.');
+      setIsLoggingIn(false);
+      return;
+    }
+
+    setUserRole(role);
+    setIsAdminAuthenticated(true);
+    await loadAdminBookings();
+    setInputPassword('');
+    setIsLoggingIn(false);
   };
 
   // Guardar turnos en Supabase
@@ -401,6 +406,7 @@ export function App() {
 
     // Enviar a Supabase con los nombres exactos de columnas
     const { data, error } = await supabase.from('bookings').insert([{
+      service_id: selectedService.id,
       service_name: selectedService.name,
       client_name: bookingData.clientName,
       client_phone: bookingData.clientPhone,
@@ -1136,7 +1142,7 @@ export function App() {
         }}>
           <span>© {new Date().getFullYear()} {settings.businessName}. Diseñado con amor ❤️ para potenciar tu belleza.</span>
           <button
-            onClick={() => openAuthModal('staff')}
+            onClick={openAuthModal}
             style={{
               background: 'none',
               border: 'none',
@@ -1246,79 +1252,51 @@ export function App() {
                   color: '#fff',
                   boxShadow: '0 4px 15px rgba(216, 165, 99, 0.3)'
                 }}>
-                  {targetRole === 'owner' ? <Lock size={28} /> : <Users size={28} />}
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '6px',
-                  background: 'rgba(0,0,0,0.2)',
-                  padding: '4px',
-                  borderRadius: '10px',
-                  marginBottom: '16px'
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => { setTargetRole('staff'); setPasswordError(''); }}
-                    style={{
-                      flex: 1,
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: targetRole === 'staff' ? 'linear-gradient(135deg, #d8a563, #b87b32)' : 'transparent',
-                      color: targetRole === 'staff' ? '#fff' : 'var(--text-muted)',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    👥 Modo Equipo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setTargetRole('owner'); setPasswordError(''); }}
-                    style={{
-                      flex: 1,
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: targetRole === 'owner' ? 'linear-gradient(135deg, #d8a563, #b87b32)' : 'transparent',
-                      color: targetRole === 'owner' ? '#fff' : 'var(--text-muted)',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🔑 Panel Dueña
-                  </button>
+                  <Lock size={28} />
                 </div>
 
                 <h3 style={{ fontSize: '1.3rem', color: 'var(--text-main)', marginBottom: '4px', fontWeight: 700 }}>
-                  {targetRole === 'owner' ? 'Acceso Modo Dueña' : 'Acceso Turnos (Equipo)'}
+                  Acceso al Panel
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  {targetRole === 'owner'
-                    ? 'Ingresá la clave principal para controlar y editar el sitio'
-                    : 'Ingresá la clave del equipo para gestionar los turnos'}
+                  Ingresá con tu email. Tu rol determina los permisos del panel.
                 </p>
               </div>
 
               <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '6px', fontWeight: 600 }}>
-                    {targetRole === 'owner' ? 'Contraseña de la Dueña' : 'Contraseña de Equipo'}
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="tu@email.com"
+                    value={adminEmail}
+                    onChange={(e) => {
+                      setAdminEmail(e.target.value);
+                      setPasswordError('');
+                    }}
+                    className="custom-input"
+                    autoFocus
+                    autoComplete="email"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '6px', fontWeight: 600 }}>
+                    Contraseña
                   </label>
                   <input
                     type="password"
                     required
-                    placeholder={targetRole === 'owner' ? 'Clave de la dueña...' : 'Clave de empleadas...'}
+                    placeholder="Tu contraseña"
                     value={inputPassword}
                     onChange={(e) => {
                       setInputPassword(e.target.value);
                       setPasswordError('');
                     }}
                     className="custom-input"
-                    autoFocus
+                    autoComplete="current-password"
                   />
                   {passwordError && (
                     <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '6px', fontWeight: 600 }}>
@@ -1331,8 +1309,9 @@ export function App() {
                   type="submit"
                   className="btn-primary"
                   style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '6px' }}
+                  disabled={isLoggingIn}
                 >
-                  Ingresar al Panel ✨
+                  {isLoggingIn ? 'Ingresando…' : 'Ingresar al Panel ✨'}
                 </button>
               </form>
             </div>
@@ -1344,7 +1323,7 @@ export function App() {
             gallery={gallery}
             bookings={bookings}
             reviews={reviews}
-            userRole={userRole}
+            userRole={userRole ?? 'staff'}
             onUpdateSettings={setSettings}
             onUpdateServices={setServices}
             onUpdateGallery={setGallery}
