@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { AppSettings, Service, Booking } from '../types';
+import { supabase } from '../lib/supabase';
 import { Calendar, Clock, CheckCircle2, MessageCircle, Sparkles, User, Phone, FileText } from 'lucide-react';
 
 interface BookingModalProps {
@@ -7,7 +8,7 @@ interface BookingModalProps {
   settings: AppSettings;
   bookings?: Booking[];
   onClose: () => void;
-  onConfirmBooking: (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => void;
+  onConfirmBooking: (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => Promise<boolean>;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
@@ -23,6 +24,41 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setOccupiedTimes([]);
+      return;
+    }
+
+    let cancelled = false;
+    setAvailabilityError('');
+
+    const loadAvailability = async () => {
+      const { data, error } = await supabase.rpc('get_occupied_booking_times', {
+        p_appointment_date: selectedDate,
+      });
+
+      if (cancelled) return;
+      if (error) {
+        console.error('Error cargando disponibilidad:', error);
+        setAvailabilityError('No pudimos cargar los horarios ocupados. Probá nuevamente.');
+        return;
+      }
+
+      setOccupiedTimes(
+        ((data ?? []) as { appointment_time: string }[])
+          .map(slot => slot.appointment_time)
+      );
+    };
+
+    loadAvailability();
+    return () => { cancelled = true; };
+  }, [selectedDate]);
 
   // Generate available times based on custom service slots or duration
   const generateTimeSlots = () => {
@@ -51,23 +87,32 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   // Helper to check if time is already booked for selected date (excluding cancelled)
   const isTimeBooked = (timeStr: string) => {
     if (!selectedDate) return false;
-    return bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
+    return occupiedTimes.includes(timeStr)
+      || bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
   };
 
   // Get minimum date (today)
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime || !clientName || !clientPhone) return;
 
-    onConfirmBooking({
+    setIsSubmitting(true);
+    setSubmitError('');
+    const confirmed = await onConfirmBooking({
       clientName,
       clientPhone,
       date: selectedDate,
       time: selectedTime,
       notes
     });
+
+    if (!confirmed) {
+      setSubmitError('No pudimos registrar el turno. Revisá los datos o elegí otro horario.');
+      setIsSubmitting(false);
+      return;
+    }
 
     // Send automatic background email notification if notificationEmail is set
     if (settings.notificationEmail) {
@@ -94,6 +139,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     }
 
     setStep(3); // Confirmation step
+    setIsSubmitting(false);
   };
 
   const handleSendWhatsApp = () => {
@@ -234,6 +280,11 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                     );
                   })}
                 </div>
+                {availabilityError && (
+                  <p style={{ color: '#fca5a5', fontSize: '0.8rem', margin: '10px 0 0' }}>
+                    {availabilityError}
+                  </p>
+                )}
               </div>
             )}
 
@@ -313,10 +364,16 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 type="submit" 
                 className="btn-primary"
                 style={{ flex: 2, justifyContent: 'center' }}
+                disabled={isSubmitting}
               >
-                Confirmar Reserva ✨
+                {isSubmitting ? 'Guardando…' : 'Confirmar Reserva ✨'}
               </button>
             </div>
+            {submitError && (
+              <p style={{ color: '#fca5a5', fontSize: '0.84rem', margin: 0 }}>
+                {submitError}
+              </p>
+            )}
           </form>
         )}
 

@@ -16,8 +16,9 @@ import type {
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
-import { fetchMyRole } from './lib/queries';
+import { fetchMyRole, fetchServices } from './lib/queries';
 import type { UserRole } from './lib/db';
+import { dbToService } from './lib/adapters';
 import {
   Sparkles,
   Calendar,
@@ -208,10 +209,19 @@ export function App() {
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
-        const { data: reviewsData } = await supabase
+        const [serviceRows, reviewsResponse] = await Promise.all([
+          fetchServices(),
+          supabase
           .from('reviews')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }),
+        ]);
+
+        // Los IDs de esta lista son UUIDs reales de Supabase; nunca usar los
+        // ejemplos locales para crear una reserva.
+        setServices(serviceRows.map(dbToService));
+
+        const { data: reviewsData } = reviewsResponse;
 
         if (reviewsData && reviewsData.length > 0) {
           setReviews(reviewsData.map(r => ({
@@ -388,8 +398,8 @@ export function App() {
   };
 
   // Guardar turnos en Supabase
-  const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => {
-    if (!selectedService) return;
+  const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }): Promise<boolean> => {
+    if (!selectedService) return false;
 
     const newBooking: Booking = {
       id: Date.now().toString(),
@@ -405,7 +415,7 @@ export function App() {
     };
 
     // Enviar a Supabase con los nombres exactos de columnas
-    const { data, error } = await supabase.from('bookings').insert([{
+    const { error } = await supabase.from('bookings').insert({
       service_id: selectedService.id,
       service_name: selectedService.name,
       client_name: bookingData.clientName,
@@ -414,16 +424,15 @@ export function App() {
       appointment_time: bookingData.time,
       notes: bookingData.notes,
       status: 'pending'
-    }]).select();
+    });
 
     if (error) {
       console.error("Error al insertar en Supabase:", error);
-      alert("Error de Supabase: " + error.message);
-    } else if (data && data.length > 0) {
-      newBooking.id = data[0].id;
+      return false;
     }
 
-    setBookings([newBooking, ...bookings]);
+    setBookings(prev => [newBooking, ...prev]);
+    return true;
   };
 
   const filteredServices = activeCategoryFilter === 'all'
