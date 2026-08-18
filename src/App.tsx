@@ -397,6 +397,20 @@ export function App() {
     setIsLoggingIn(false);
   };
 
+  const handleAdminLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error cerrando sesión:', error);
+      alert('No pudimos cerrar la sesión. Probá nuevamente.');
+      return;
+    }
+
+    setUserRole(null);
+    setIsAdminAuthenticated(false);
+    setIsAdminOpen(false);
+    setBookings([]);
+  };
+
   // Guardar turnos en Supabase
   const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }): Promise<boolean> => {
     if (!selectedService) return false;
@@ -1340,6 +1354,7 @@ export function App() {
             onDeleteBooking={handleDeleteBookingFromDb}
             onUpdateBookingStatus={handleUpdateBookingStatusInDb}
             onUpdateReviews={setReviews}
+            onLogout={handleAdminLogout}
             onClose={() => setIsAdminOpen(false)}
           />
         )

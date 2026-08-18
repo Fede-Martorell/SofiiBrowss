@@ -16,7 +16,8 @@ import {
   MessageSquare,
   Upload,
   ImagePlus,
-  Star
+  Star,
+  LogOut
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -33,6 +34,7 @@ interface AdminPanelProps {
   onDeleteBooking?: (id: string) => void;
   onUpdateBookingStatus?: (id: string, status: 'confirmed' | 'cancelled') => void;
   onUpdateReviews?: (newReviews: Review[]) => void;
+  onLogout: () => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -50,6 +52,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onDeleteBooking,
   onUpdateBookingStatus,
   onUpdateReviews,
+  onLogout,
   onClose
 }) => {
   const [activeTab, setActiveTab] = useState<'bookings' | 'services' | 'gallery' | 'reviews' | 'settings'>('bookings');
@@ -275,13 +278,23 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="btn-secondary"
-          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-        >
-          <X size={16} /> Salir del Panel
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={onClose}
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+          >
+            <X size={16} /> Cerrar panel
+          </button>
+          <button
+            onClick={() => void onLogout()}
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+            title="Cerrar la sesión de este dispositivo"
+          >
+            <LogOut size={16} /> Cerrar sesión
+          </button>
+        </div>
       </div>
 
       {/* Main Admin Area */}
