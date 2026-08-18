@@ -24,7 +24,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
-  const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
+  const [occupiedTimes, setOccupiedTimes] = useState<{ time: string; duration: number }[]>([]);
   const [availabilityError, setAvailabilityError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -51,8 +51,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       }
 
       setOccupiedTimes(
-        ((data ?? []) as { appointment_time: string }[])
-          .map(slot => slot.appointment_time)
+        ((data ?? []) as { appointment_time: string; duration_minutes: number }[])
+          .map(slot => ({ time: slot.appointment_time, duration: slot.duration_minutes }))
       );
     };
 
@@ -87,8 +87,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   // Helper to check if time is already booked for selected date (excluding cancelled)
   const isTimeBooked = (timeStr: string) => {
     if (!selectedDate) return false;
-    return occupiedTimes.includes(timeStr)
-      || bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const start = hours * 60 + minutes;
+    const end = start + service.durationMinutes;
+    const overlaps = occupiedTimes.some(({ time, duration }) => {
+      const [occupiedHours, occupiedMinutes] = time.split(':').map(Number);
+      const occupiedStart = occupiedHours * 60 + occupiedMinutes;
+      return start < occupiedStart + duration && occupiedStart < end;
+    });
+    return overlaps || bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
   };
 
   // Get minimum date (today)

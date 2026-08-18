@@ -16,9 +16,13 @@ import type {
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
-import { fetchMyRole, fetchServices } from './lib/queries';
+import {
+  createGalleryItem, createService, deleteGalleryItem, deleteImageByUrl, deleteReview, deleteService,
+  fetchGallery, fetchMyRole, fetchReviews, fetchServices, fetchSettings,
+  toggleReviewApproval, updateGalleryItem, updateService, updateSettings,
+} from './lib/queries';
 import type { UserRole } from './lib/db';
-import { dbToService } from './lib/adapters';
+import { dbToGallery, dbToReview, dbToService, dbToSettings, legacyToDbGallery, legacyToDbService, legacyToDbSettings } from './lib/adapters';
 import {
   Sparkles,
   Calendar,
@@ -209,8 +213,10 @@ export function App() {
   useEffect(() => {
     const fetchSupabaseData = async () => {
       try {
-        const [serviceRows, reviewsResponse] = await Promise.all([
+        const [serviceRows, galleryRows, settingsRow, reviewsResponse] = await Promise.all([
           fetchServices(),
+          fetchGallery(),
+          fetchSettings(),
           supabase
           .from('reviews')
           .select('*')
@@ -220,6 +226,8 @@ export function App() {
         // Los IDs de esta lista son UUIDs reales de Supabase; nunca usar los
         // ejemplos locales para crear una reserva.
         setServices(serviceRows.map(dbToService));
+        setGallery(galleryRows.map(dbToGallery));
+        if (settingsRow) setSettings(dbToSettings(settingsRow));
 
         const { data: reviewsData } = reviewsResponse;
 
@@ -262,6 +270,67 @@ export function App() {
       status: b.status,
       createdAt: b.created_at,
     })));
+  };
+
+  const refreshServices = async () => setServices((await fetchServices()).map(dbToService));
+  const refreshGallery = async () => setGallery((await fetchGallery()).map(dbToGallery));
+  const refreshReviews = async () => setReviews((await fetchReviews()).map(dbToReview));
+
+  const handlePersistServices = async (next: Service[]) => {
+    try {
+      const previous = new Map(services.map(s => [s.id, s]));
+      await Promise.all(services.filter(s => !next.some(n => n.id === s.id)).map(s => deleteService(s.id)));
+      await Promise.all(next.map(async (service, index) => {
+        const data = { ...legacyToDbService(service), sort_order: index };
+        if (previous.has(service.id)) return updateService(service.id, data);
+        return createService({
+          name: service.name, category: service.category, description: service.description,
+          duration_minutes: service.durationMinutes, price_cents: service.price,
+          image: service.image, images: service.images ?? [service.image], popular: service.popular ?? false,
+          available_slots: service.availableSlots ?? null, is_active: true, sort_order: index,
+        });
+      }));
+      const keptImages = new Set([
+        ...next.flatMap(service => service.images ?? [service.image]),
+        ...gallery.flatMap(item => item.images ?? [item.imageUrl]),
+      ]);
+      await Promise.all(services.flatMap(service => service.images ?? [service.image])
+        .filter(url => !keptImages.has(url)).map(deleteImageByUrl));
+      await refreshServices();
+    } catch (error) { console.error('Error guardando servicios:', error); alert('No se pudieron guardar los servicios.'); }
+  };
+
+  const handlePersistGallery = async (next: GalleryItem[]) => {
+    try {
+      const previous = new Map(gallery.map(item => [item.id, item]));
+      await Promise.all(gallery.filter(item => !next.some(n => n.id === item.id)).map(item => deleteGalleryItem(item.id)));
+      await Promise.all(next.map(async (item, index) => {
+        const data = { ...legacyToDbGallery(item), sort_order: index };
+        if (previous.has(item.id)) return updateGalleryItem(item.id, data);
+        return createGalleryItem({ title: item.title, category: item.category, image_url: item.imageUrl, images: item.images ?? [item.imageUrl], description: item.description ?? null, sort_order: index });
+      }));
+      const keptImages = new Set([
+        ...services.flatMap(service => service.images ?? [service.image]),
+        ...next.flatMap(item => item.images ?? [item.imageUrl]),
+      ]);
+      await Promise.all(gallery.flatMap(item => item.images ?? [item.imageUrl])
+        .filter(url => !keptImages.has(url)).map(deleteImageByUrl));
+      await refreshGallery();
+    } catch (error) { console.error('Error guardando galería:', error); alert('No se pudo guardar la galería.'); }
+  };
+
+  const handlePersistSettings = async (next: AppSettings) => {
+    try { setSettings(dbToSettings(await updateSettings(legacyToDbSettings(next)))); }
+    catch (error) { console.error('Error guardando ajustes:', error); alert('No se pudieron guardar los ajustes.'); }
+  };
+
+  const handlePersistReviews = async (next: Review[]) => {
+    try {
+      const previous = new Map(reviews.map(review => [review.id, review]));
+      await Promise.all(reviews.filter(review => !next.some(n => n.id === review.id)).map(review => deleteReview(review.id)));
+      await Promise.all(next.filter(review => previous.get(review.id)?.verified !== review.verified).map(review => toggleReviewApproval(review.id, review.verified)));
+      await refreshReviews();
+    } catch (error) { console.error('Error moderando reseñas:', error); alert('No se pudieron actualizar las reseñas.'); }
   };
 
   // 2. Handlers para sincronizar con Supabase desde el panel Admin
@@ -429,15 +498,13 @@ export function App() {
     };
 
     // Enviar a Supabase con los nombres exactos de columnas
-    const { error } = await supabase.from('bookings').insert({
-      service_id: selectedService.id,
-      service_name: selectedService.name,
-      client_name: bookingData.clientName,
-      client_phone: bookingData.clientPhone,
-      appointment_date: bookingData.date,
-      appointment_time: bookingData.time,
-      notes: bookingData.notes,
-      status: 'pending'
+    const { data: bookingId, error } = await supabase.rpc('create_public_booking', {
+      p_service_id: selectedService.id,
+      p_client_name: bookingData.clientName,
+      p_client_phone: bookingData.clientPhone,
+      p_appointment_date: bookingData.date,
+      p_appointment_time: bookingData.time,
+      p_notes: bookingData.notes || null,
     });
 
     if (error) {
@@ -445,6 +512,7 @@ export function App() {
       return false;
     }
 
+    newBooking.id = bookingId ?? newBooking.id;
     setBookings(prev => [newBooking, ...prev]);
     return true;
   };
@@ -1347,13 +1415,13 @@ export function App() {
             bookings={bookings}
             reviews={reviews}
             userRole={userRole ?? 'staff'}
-            onUpdateSettings={setSettings}
-            onUpdateServices={setServices}
-            onUpdateGallery={setGallery}
+            onUpdateSettings={handlePersistSettings}
+            onUpdateServices={handlePersistServices}
+            onUpdateGallery={handlePersistGallery}
             onUpdateBookings={setBookings}
             onDeleteBooking={handleDeleteBookingFromDb}
             onUpdateBookingStatus={handleUpdateBookingStatusInDb}
-            onUpdateReviews={setReviews}
+            onUpdateReviews={handlePersistReviews}
             onLogout={handleAdminLogout}
             onClose={() => setIsAdminOpen(false)}
           />

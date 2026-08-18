@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { AppSettings, Booking, GalleryItem, Service, Review } from '../types';
+import { uploadImage } from '../lib/queries';
 import {
   Calendar,
   Settings as SettingsIcon,
@@ -27,9 +28,9 @@ interface AdminPanelProps {
   bookings: Booking[];
   reviews?: Review[];
   userRole?: 'owner' | 'staff';
-  onUpdateSettings: (newSettings: AppSettings) => void;
-  onUpdateServices: (newServices: Service[]) => void;
-  onUpdateGallery: (newGallery: GalleryItem[]) => void;
+  onUpdateSettings: (newSettings: AppSettings) => void | Promise<void>;
+  onUpdateServices: (newServices: Service[]) => void | Promise<void>;
+  onUpdateGallery: (newGallery: GalleryItem[]) => void | Promise<void>;
   onUpdateBookings: (newBookings: Booking[]) => void;
   onDeleteBooking?: (id: string) => void;
   onUpdateBookingStatus?: (id: string, status: 'confirmed' | 'cancelled') => void;
@@ -59,6 +60,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingService, setEditingService] = useState<Partial<Service> | null>(null);
   const [editingGallery, setEditingGallery] = useState<Partial<GalleryItem> | null>(null);
   const [tempSettings, setTempSettings] = useState<AppSettings>({ ...settings });
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const handleDeleteReview = (reviewId: string) => {
     if (onUpdateReviews) {
@@ -109,32 +111,23 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
   };
 
   // Helper to handle multiple image file selection (from phone/PC)
-  const handleMultipleFilesUpload = (
+  const handleMultipleFilesUpload = async (
     files: FileList | null,
     currentImages: string[],
-    setImages: (images: string[]) => void
+    setImages: (images: string[]) => void,
+    folder: 'services' | 'gallery'
   ) => {
     if (!files || files.length === 0) return;
-
-    const fileArray = Array.from(files);
-    const readPromises = fileArray.map(file => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            resolve(e.target.result as string);
-          } else {
-            reject('Error reading file');
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(readPromises).then(newBase64Images => {
-      setImages([...currentImages, ...newBase64Images]);
-    }).catch(err => console.error("Error al cargar imágenes:", err));
+    setIsUploadingImages(true);
+    try {
+      const urls = await Promise.all(Array.from(files).map(file => uploadImage(file, folder)));
+      setImages([...currentImages, ...urls]);
+    } catch (err) {
+      console.error('Error al cargar imágenes:', err);
+      alert('No se pudieron subir las imágenes. Verificá que el bucket media exista y que tengas permiso de dueña.');
+    } finally {
+      setIsUploadingImages(false);
+    }
   };
 
   // Service handlers
@@ -681,14 +674,14 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                               const currentList = editingService.images && editingService.images.length > 0
                                 ? editingService.images
                                 : editingService.image ? [editingService.image] : [];
-                              handleMultipleFilesUpload(
+                              void handleMultipleFilesUpload(
                                 e.target.files,
                                 currentList,
                                 (newList) => setEditingService({
                                   ...editingService,
                                   images: newList,
                                   image: newList[0] || editingService.image
-                                })
+                                }), 'services'
                               );
                               e.target.value = '';
                             }}
@@ -786,7 +779,9 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       />
                     </div>
                     <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px', marginTop: '10px' }}>
-                      <button type="submit" className="btn-primary">Guardar Servicio</button>
+                      <button type="submit" className="btn-primary" disabled={isUploadingImages}>
+                        {isUploadingImages ? 'Subiendo fotos…' : 'Guardar Servicio'}
+                      </button>
                       <button type="button" onClick={() => setEditingService(null)} className="btn-secondary">Cancelar</button>
                     </div>
                   </form>
@@ -904,14 +899,14 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                               const currentList = editingGallery.images && editingGallery.images.length > 0
                                 ? editingGallery.images
                                 : editingGallery.imageUrl ? [editingGallery.imageUrl] : [];
-                              handleMultipleFilesUpload(
+                              void handleMultipleFilesUpload(
                                 e.target.files,
                                 currentList,
                                 (newList) => setEditingGallery({
                                   ...editingGallery,
                                   images: newList,
                                   imageUrl: newList[0] || editingGallery.imageUrl
-                                })
+                                }), 'gallery'
                               );
                               e.target.value = '';
                             }}
@@ -995,7 +990,9 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button type="submit" className="btn-primary">Guardar Foto</button>
+                      <button type="submit" className="btn-primary" disabled={isUploadingImages}>
+                        {isUploadingImages ? 'Subiendo fotos…' : 'Guardar Foto'}
+                      </button>
                       <button type="button" onClick={() => setEditingGallery(null)} className="btn-secondary">Cancelar</button>
                     </div>
                   </form>
