@@ -16,7 +16,6 @@ import type {
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
-import { syncBookingToGoogleCalendar } from './lib/calendar';
 import {
   createGalleryItem, createService, deleteGalleryItem, deleteImageByUrl, deleteReview, deleteService,
   fetchGallery, fetchMyRole, fetchReviews, fetchServices, fetchSettings,
@@ -342,7 +341,6 @@ export function App() {
   // 2. Handlers para sincronizar con Supabase desde el panel Admin
   const handleDeleteBookingFromDb = async (id: string) => {
     try {
-      await syncBookingToGoogleCalendar(id, 'delete');
       const { error } = await supabase.from('bookings').delete().eq('id', id);
       if (error) throw error;
       setBookings(prev => prev.filter(b => b.id !== id));
@@ -357,7 +355,6 @@ export function App() {
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
-      void syncBookingToGoogleCalendar(id, newStatus === 'cancelled' ? 'cancel' : 'upsert');
     } catch (err: any) {
       console.error("Error al actualizar estado:", err.message);
     }
@@ -542,7 +539,6 @@ export function App() {
 
     newBooking.id = bookingId ?? newBooking.id;
     setBookings(prev => [newBooking, ...prev]);
-    void syncBookingToGoogleCalendar(newBooking.id, 'upsert');
     return true;
   };
 

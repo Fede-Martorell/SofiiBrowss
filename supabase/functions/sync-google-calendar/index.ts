@@ -42,25 +42,25 @@ async function googleAccessToken(serviceAccount: { client_email: string; private
 Deno.serve(async request => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const { bookingId, action = 'upsert' } = await request.json();
+    const { bookingId, action = 'upsert', eventId: deletedEventId } = await request.json();
     if (!bookingId || !['upsert', 'cancel', 'delete'].includes(action)) throw new Error('Solicitud inválida.');
+    console.log(`Calendar sync requested: ${action} for booking ${bookingId}`);
 
     const serviceAccountRaw = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
     const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
     if (!serviceAccountRaw || !calendarId) throw new Error('Google Calendar no está configurado.');
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: booking, error } = await admin.from('bookings').select('*, services(duration_minutes)').eq('id', bookingId).single();
-    if (error || !booking) throw new Error('No se encontró el turno.');
-
     const accessToken = await googleAccessToken(JSON.parse(serviceAccountRaw));
     const baseUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
-    const eventId = booking.google_calendar_event_id;
+    const eventId = booking?.google_calendar_event_id ?? deletedEventId;
+    if ((error || !booking) && !(action === 'delete' && eventId)) throw new Error('No se encontró el turno.');
     if ((action === 'delete' || action === 'cancel' || booking.status === 'cancelled') && eventId) {
       await fetch(`${baseUrl}/${encodeURIComponent(eventId)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
       if (action === 'cancel') await admin.from('bookings').update({ google_calendar_event_id: null }).eq('id', bookingId);
       return Response.json({ ok: true }, { headers: corsHeaders });
     }
-    if (action === 'delete' || booking.status === 'cancelled') return Response.json({ ok: true }, { headers: corsHeaders });
+    if (action === 'delete' || booking?.status === 'cancelled') return Response.json({ ok: true }, { headers: corsHeaders });
 
     const duration = booking.services?.duration_minutes ?? 60;
     const start = new Date(`${booking.appointment_date}T${booking.appointment_time}:00-03:00`);
@@ -80,6 +80,7 @@ Deno.serve(async request => {
     if (!response.ok) throw new Error(`Google Calendar: ${await response.text()}`);
     const savedEvent = await response.json();
     if (!eventId) await admin.from('bookings').update({ google_calendar_event_id: savedEvent.id }).eq('id', bookingId);
+    console.log(`Calendar sync completed for booking ${bookingId}`);
     return Response.json({ ok: true }, { headers: corsHeaders });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : 'Error desconocido' }, { status: 400, headers: corsHeaders });
