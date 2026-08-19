@@ -182,3 +182,25 @@
     border-right-color: var(--border);
   }
 }
+/* Botón de ordenamiento: área táctil amplia para que funcione cómodo en celular. */
+.service-drag-handle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 48px;
+  padding: 0;
+  margin: 5px 0 0 -5px;
+  color: var(--primary);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.service-drag-handle:active {
+  cursor: grabbing;
+  background: rgba(216, 165, 99, 0.16);
+}

@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { AppSettings, Booking, GalleryItem, Service, Review } from '../types';
 import { uploadImage } from '../lib/queries';
 import {
@@ -18,7 +21,8 @@ import {
   Upload,
   ImagePlus,
   Star,
-  LogOut
+  LogOut,
+  GripVertical
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -38,6 +42,66 @@ interface AdminPanelProps {
   onLogout: () => void | Promise<void>;
   onClose: () => void;
 }
+
+interface SortableServiceCardProps {
+  service: Service;
+  onEdit: (service: Service) => void;
+  onDelete: (id: string) => void;
+}
+
+const SortableServiceCard: React.FC<SortableServiceCardProps> = ({ service, onEdit, onDelete }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: service.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="glass-card"
+      style={{
+        padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.45 : 1,
+        boxShadow: isDragging ? '0 14px 30px rgba(0, 0, 0, 0.28)' : undefined,
+      }}
+    >
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '12px' }}>
+        <button
+          type="button"
+          aria-label={`Mover ${service.name}`}
+          title="Mantené y arrastrá para cambiar el orden"
+          className="service-drag-handle"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={20} />
+        </button>
+        <img
+          src={service.image}
+          alt={service.name}
+          style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }}
+        />
+        <div>
+          <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>{service.name}</h4>
+          <p style={{
+            background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800,
+            fontSize: '1.15rem', margin: '2px 0'
+          }}>
+            ${service.price.toLocaleString('es-AR')}
+          </p>
+          <p style={{ fontSize: '0.8rem', color: '#e6d7c7' }}>⏱ {service.durationMinutes} min</p>
+        </div>
+      </div>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{service.description}</p>
+      <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+        <button onClick={() => onEdit(service)} className="btn-secondary" style={{ flex: 1, padding: '6px', justifyContent: 'center', fontSize: '0.8rem' }}>
+          <Edit3 size={14} /> Editar
+        </button>
+        <button onClick={() => onDelete(service.id)} className="btn-danger" style={{ padding: '6px 12px' }}>
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   settings,
@@ -63,6 +127,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isSavingService, setIsSavingService] = useState(false);
   const [serviceSaveError, setServiceSaveError] = useState('');
+  const [isSavingServiceOrder, setIsSavingServiceOrder] = useState(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const handleDeleteReview = (reviewId: string) => {
     if (onUpdateReviews) {
@@ -188,6 +257,25 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
   const handleDeleteService = (id: string) => {
     if (confirm('¿Deseas eliminar este servicio?')) {
       onUpdateServices(services.filter(s => s.id !== id));
+    }
+  };
+
+  const handleServiceDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id || isSavingServiceOrder) return;
+    const oldIndex = services.findIndex((service) => service.id === active.id);
+    const newIndex = services.findIndex((service) => service.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    setIsSavingServiceOrder(true);
+    setServiceSaveError('');
+    try {
+      const saved = await onUpdateServices(arrayMove(services, oldIndex, newIndex));
+      if (!saved) setServiceSaveError('No pudimos guardar el nuevo orden. Probá nuevamente.');
+    } catch (error) {
+      console.error('Error reordenando servicios:', error);
+      setServiceSaveError('No pudimos guardar el nuevo orden. Probá nuevamente.');
+    } finally {
+      setIsSavingServiceOrder(false);
     }
   };
 
@@ -806,50 +894,25 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
-                {services.map((svc) => (
-                  <div key={svc.id} className="glass-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                      <img
-                        src={svc.image}
-                        alt={svc.name}
-                        style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }}
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 14px' }}>
+                Mantené presionado el ícono ⠿ y arrastrá cada tarjeta para elegir el orden en que se muestran los servicios.
+                {isSavingServiceOrder ? ' Guardando orden…' : ''}
+              </p>
+              {serviceSaveError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 12px' }}>{serviceSaveError}</p>}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleServiceDragEnd}>
+                <SortableContext items={services.map((service) => service.id)} strategy={rectSortingStrategy}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
+                    {services.map((service) => (
+                      <SortableServiceCard
+                        key={service.id}
+                        service={service}
+                        onEdit={(selectedService) => { setServiceSaveError(''); setEditingService(selectedService); }}
+                        onDelete={handleDeleteService}
                       />
-                      <div>
-                        <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>{svc.name}</h4>
-                        <p style={{
-                          background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          fontWeight: 800,
-                          fontSize: '1.15rem',
-                          margin: '2px 0'
-                        }}>
-                          ${svc.price.toLocaleString('es-AR')}
-                        </p>
-                        <p style={{ fontSize: '0.8rem', color: '#e6d7c7' }}>⏱ {svc.durationMinutes} min</p>
-                      </div>
-                    </div>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{svc.description}</p>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-                      <button
-                        onClick={() => { setServiceSaveError(''); setEditingService(svc); }}
-                        className="btn-secondary"
-                        style={{ flex: 1, padding: '6px', justifyContent: 'center', fontSize: '0.8rem' }}
-                      >
-                        <Edit3 size={14} /> Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteService(svc.id)}
-                        className="btn-danger"
-                        style={{ padding: '6px 12px' }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             </div>
           )}
 
