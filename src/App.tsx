@@ -16,6 +16,7 @@ import type {
 import { BookingModal } from './components/BookingModal';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
+import { syncBookingToGoogleCalendar } from './lib/calendar';
 import {
   createGalleryItem, createService, deleteGalleryItem, deleteImageByUrl, deleteReview, deleteService,
   fetchGallery, fetchMyRole, fetchReviews, fetchServices, fetchSettings,
@@ -272,15 +273,14 @@ export function App() {
     })));
   };
 
-  const refreshServices = async () => setServices((await fetchServices()).map(dbToService));
   const refreshGallery = async () => setGallery((await fetchGallery()).map(dbToGallery));
   const refreshReviews = async () => setReviews((await fetchReviews()).map(dbToReview));
 
-  const handlePersistServices = async (next: Service[]) => {
+  const handlePersistServices = async (next: Service[]): Promise<boolean> => {
     try {
       const previous = new Map(services.map(s => [s.id, s]));
       await Promise.all(services.filter(s => !next.some(n => n.id === s.id)).map(s => deleteService(s.id)));
-      await Promise.all(next.map(async (service, index) => {
+      const savedServices = await Promise.all(next.map(async (service, index) => {
         const data = { ...legacyToDbService(service), sort_order: index };
         if (previous.has(service.id)) return updateService(service.id, data);
         return createService({
@@ -296,8 +296,14 @@ export function App() {
       ]);
       await Promise.all(services.flatMap(service => service.images ?? [service.image])
         .filter(url => !keptImages.has(url)).map(deleteImageByUrl));
-      await refreshServices();
-    } catch (error) { console.error('Error guardando servicios:', error); alert('No se pudieron guardar los servicios.'); }
+      // Usar la respuesta de la escritura evita mostrar un falso error si una
+      // recarga posterior falla, especialmente con redes móviles inestables.
+      setServices(savedServices.map(dbToService));
+      return true;
+    } catch (error) {
+      console.error('Error guardando servicios:', error);
+      return false;
+    }
   };
 
   const handlePersistGallery = async (next: GalleryItem[]) => {
@@ -336,6 +342,7 @@ export function App() {
   // 2. Handlers para sincronizar con Supabase desde el panel Admin
   const handleDeleteBookingFromDb = async (id: string) => {
     try {
+      await syncBookingToGoogleCalendar(id, 'delete');
       const { error } = await supabase.from('bookings').delete().eq('id', id);
       if (error) throw error;
       setBookings(prev => prev.filter(b => b.id !== id));
@@ -350,6 +357,7 @@ export function App() {
       const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
+      void syncBookingToGoogleCalendar(id, newStatus === 'cancelled' ? 'cancel' : 'upsert');
     } catch (err: any) {
       console.error("Error al actualizar estado:", err.message);
     }
@@ -397,6 +405,16 @@ export function App() {
   const [passwordError, setPasswordError] = useState<string>('');
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<'all' | 'lashes' | 'brows' | 'combo'>('all');
+
+  useEffect(() => {
+    if (!isAdminAuthenticated) return;
+    const channel = supabase.channel('admin-bookings-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        void loadAdminBookings().catch(error => console.error('Error actualizando turnos en vivo:', error));
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [isAdminAuthenticated]);
 
   useEffect(() => {
     localStorage.setItem('app_theme', theme);
@@ -483,6 +501,10 @@ export function App() {
   // Guardar turnos en Supabase
   const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }): Promise<boolean> => {
     if (!selectedService) return false;
+    const appointment = new Date(`${bookingData.date}T${bookingData.time}:00-03:00`);
+    if (Number.isNaN(appointment.getTime()) || appointment.getTime() < Date.now() + 2 * 60 * 60 * 1000) {
+      return false;
+    }
 
     const newBooking: Booking = {
       id: Date.now().toString(),
@@ -514,6 +536,7 @@ export function App() {
 
     newBooking.id = bookingId ?? newBooking.id;
     setBookings(prev => [newBooking, ...prev]);
+    void syncBookingToGoogleCalendar(newBooking.id, 'upsert');
     return true;
   };
 
@@ -1301,7 +1324,7 @@ export function App() {
       {isAdminOpen && (
         !isAdminAuthenticated ? (
           <div className="modal-overlay admin-login-overlay" style={{
-            background: 'rgba(5, 8, 16, 0.88)',
+            background: 'rgba(36, 24, 21, 0.88)',
             backdropFilter: 'blur(10px)',
             zIndex: 2000
           }}>

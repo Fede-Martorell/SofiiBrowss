@@ -29,7 +29,7 @@ interface AdminPanelProps {
   reviews?: Review[];
   userRole?: 'owner' | 'staff';
   onUpdateSettings: (newSettings: AppSettings) => void | Promise<void>;
-  onUpdateServices: (newServices: Service[]) => void | Promise<void>;
+  onUpdateServices: (newServices: Service[]) => void | Promise<boolean>;
   onUpdateGallery: (newGallery: GalleryItem[]) => void | Promise<void>;
   onUpdateBookings: (newBookings: Booking[]) => void;
   onDeleteBooking?: (id: string) => void;
@@ -61,6 +61,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [editingGallery, setEditingGallery] = useState<Partial<GalleryItem> | null>(null);
   const [tempSettings, setTempSettings] = useState<AppSettings>({ ...settings });
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isSavingService, setIsSavingService] = useState(false);
+  const [serviceSaveError, setServiceSaveError] = useState('');
 
   const handleDeleteReview = (reviewId: string) => {
     if (onUpdateReviews) {
@@ -131,7 +133,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
   };
 
   // Service handlers
-  const handleSaveService = (e: React.FormEvent) => {
+  const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingService?.name || !editingService?.price) return;
 
@@ -143,13 +145,14 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
 
     const mainImage = imagesList[0];
 
+    let nextServices: Service[];
     if (editingService.id) {
       // Update existing
-      onUpdateServices(services.map(s => s.id === editingService.id ? {
+      nextServices = services.map(s => s.id === editingService.id ? {
         ...(editingService as Service),
         image: mainImage,
         images: imagesList
-      } : s));
+      } : s);
     } else {
       // Create new
       const newService: Service = {
@@ -163,9 +166,23 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
         images: imagesList,
         popular: editingService.popular || false
       };
-      onUpdateServices([...services, newService]);
+      nextServices = [...services, newService];
     }
-    setEditingService(null);
+    setIsSavingService(true);
+    setServiceSaveError('');
+    try {
+      const saved = await onUpdateServices(nextServices);
+      if (saved === false) {
+        setServiceSaveError('No pudimos guardar el servicio. No se cerró el formulario para que puedas reintentar.');
+        return;
+      }
+      setEditingService(null);
+    } catch (error) {
+      console.error('Error guardando servicio:', error);
+      setServiceSaveError('No pudimos guardar el servicio. Probá nuevamente.');
+    } finally {
+      setIsSavingService(false);
+    }
   };
 
   const handleDeleteService = (id: string) => {
@@ -558,7 +575,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)', fontWeight: 700 }}>Servicios y Lista de Precios</h3>
                 <button
-                  onClick={() => setEditingService({ category: 'lashes', durationMinutes: 60, price: 15000, popular: false })}
+                  onClick={() => { setServiceSaveError(''); setEditingService({ category: 'lashes', durationMinutes: 60, price: 15000, popular: false }); }}
                   className="btn-primary"
                   style={{ padding: '8px 16px', fontSize: '0.88rem' }}
                 >
@@ -569,18 +586,18 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               {/* Service Form modal overlay */}
               {editingService && (
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.95)',
+                  background: 'var(--secondary-card)',
                   padding: '24px',
                   borderRadius: '16px',
                   border: '1px solid var(--primary)',
                   marginBottom: '24px'
                 }}>
-                  <h4 style={{ color: '#fff', marginBottom: '16px' }}>
+                  <h4 style={{ color: 'var(--text-main)', marginBottom: '16px' }}>
                     {editingService.id ? 'Editar Servicio' : 'Nuevo Servicio'}
                   </h4>
                   <form onSubmit={handleSaveService} className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Nombre del servicio</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre del servicio</label>
                       <input
                         type="text"
                         required
@@ -590,7 +607,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Categoría</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Categoría</label>
                       <select
                         className="custom-select"
                         value={editingService.category || 'lashes'}
@@ -602,7 +619,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Precio ($ ARS)</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Precio ($ ARS)</label>
                       <input
                         type="number"
                         required
@@ -612,7 +629,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Duración por Turno (minutos entre cada cita)</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Duración por Turno (minutos entre cada cita)</label>
                       <select
                         className="custom-select"
                         value={editingService.durationMinutes || 60}
@@ -627,7 +644,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     </div>
 
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                         ⏰ Horarios Específicos para este Servicio (Opcional, separados por coma)
                       </label>
                       <input
@@ -641,12 +658,12 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                           setEditingService({ ...editingService, availableSlots: slotsArr });
                         }}
                       />
-                      <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
                         💡 Si el servicio dura 90 min (hora y media), podés poner horarios fijos como 10:00, 11:30, 13:00 o dejar que el sistema arme los bloques automáticamente.
                       </span>
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'block', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
                         Fotos del Trabajo (Carrusel de imágenes)
                       </label>
 
@@ -687,7 +704,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                             }}
                           />
                         </label>
-                        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                           Podés seleccionar varias fotos a la vez
                         </span>
                       </div>
@@ -770,7 +787,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       </div>
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Descripción breve</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descripción breve</label>
                       <textarea
                         rows={2}
                         className="custom-textarea"
@@ -779,11 +796,12 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       />
                     </div>
                     <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px', marginTop: '10px' }}>
-                      <button type="submit" className="btn-primary" disabled={isUploadingImages}>
-                        {isUploadingImages ? 'Subiendo fotos…' : 'Guardar Servicio'}
+                      <button type="submit" className="btn-primary" disabled={isUploadingImages || isSavingService}>
+                        {isUploadingImages ? 'Subiendo fotos…' : isSavingService ? 'Guardando…' : 'Guardar Servicio'}
                       </button>
                       <button type="button" onClick={() => setEditingService(null)} className="btn-secondary">Cancelar</button>
                     </div>
+                    {serviceSaveError && <p style={{ gridColumn: '1 / -1', color: '#fca5a5', fontSize: '0.85rem', margin: 0 }}>{serviceSaveError}</p>}
                   </form>
                 </div>
               )}
@@ -798,7 +816,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }}
                       />
                       <div>
-                        <h4 style={{ color: '#fff', fontSize: '1rem', fontWeight: 700 }}>{svc.name}</h4>
+                        <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>{svc.name}</h4>
                         <p style={{
                           background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 100%)',
                           WebkitBackgroundClip: 'text',
@@ -812,10 +830,10 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         <p style={{ fontSize: '0.8rem', color: '#e6d7c7' }}>⏱ {svc.durationMinutes} min</p>
                       </div>
                     </div>
-                    <p style={{ fontSize: '0.82rem', color: '#cbd5e1', marginBottom: '12px' }}>{svc.description}</p>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{svc.description}</p>
                     <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
                       <button
-                        onClick={() => setEditingService(svc)}
+                        onClick={() => { setServiceSaveError(''); setEditingService(svc); }}
                         className="btn-secondary"
                         style={{ flex: 1, padding: '6px', justifyContent: 'center', fontSize: '0.8rem' }}
                       >
@@ -839,7 +857,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           {activeTab === 'gallery' && (
             <div>
               <div className="admin-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '1.4rem', color: '#fff' }}>Galería de Trabajos</h3>
+                <h3 style={{ fontSize: '1.4rem', color: 'var(--text-main)' }}>Galería de Trabajos</h3>
                 <button
                   onClick={() => setEditingGallery({ category: 'lashes', imageUrl: '', title: '' })}
                   className="btn-primary"
@@ -851,18 +869,18 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
 
               {editingGallery && (
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.95)',
+                  background: 'var(--secondary-card)',
                   padding: '24px',
                   borderRadius: '16px',
                   border: '1px solid var(--primary)',
                   marginBottom: '24px'
                 }}>
-                  <h4 style={{ color: '#fff', marginBottom: '16px' }}>
+                  <h4 style={{ color: 'var(--text-main)', marginBottom: '16px' }}>
                     {editingGallery.id ? 'Editar Foto' : 'Agregar Foto al Portafolio'}
                   </h4>
                   <form onSubmit={handleSaveGallery} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Título o Trabajo</label>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Título o Trabajo</label>
                       <input
                         type="text"
                         required
@@ -873,7 +891,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'block', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
                         Fotos del Trabajo (Cargar desde Celular o PC)
                       </label>
                       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
@@ -1008,7 +1026,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       style={{ width: '100%', height: '180px', objectFit: 'cover' }}
                     />
                     <div style={{ padding: '12px' }}>
-                      <h4 style={{ color: '#fff', fontSize: '0.95rem' }}>{item.title}</h4>
+                      <h4 style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{item.title}</h4>
                       <button
                         onClick={() => handleDeleteGallery(item.id)}
                         className="btn-danger"

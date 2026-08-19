@@ -28,6 +28,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [availabilityError, setAvailabilityError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -98,12 +104,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     return overlaps || bookings.some(b => b.date === selectedDate && b.time === timeStr && b.status !== 'cancelled');
   };
 
-  // Get minimum date (today)
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Las reservas se rigen por la hora local del estudio, no por UTC.
+  const todayStr = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Argentina/Buenos_Aires'
+  }).format(now);
+
+  const isTooSoon = (time: string) => {
+    if (selectedDate !== todayStr) return false;
+    const appointment = new Date(`${selectedDate}T${time}:00-03:00`);
+    return appointment.getTime() < now.getTime() + 2 * 60 * 60 * 1000;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime || !clientName || !clientPhone) return;
+    if (selectedDate < todayStr || isTooSoon(selectedTime)) {
+      setSubmitError('Los turnos deben solicitarse con al menos 2 horas de anticipación.');
+      setStep(1);
+      return;
+    }
 
     setIsSubmitting(true);
     setSubmitError('');
@@ -241,7 +260,10 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 type="date" 
                 min={todayStr}
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  setSelectedTime('');
+                }}
                 className="custom-input"
               />
             </div>
@@ -261,7 +283,8 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                   paddingRight: '4px'
                 }}>
                   {times.map((t) => {
-                    const booked = isTimeBooked(t);
+                    const tooSoon = isTooSoon(t);
+                    const booked = isTimeBooked(t) || tooSoon;
                     return (
                       <button
                         key={t}
@@ -280,9 +303,9 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                           fontSize: '0.85rem',
                           textDecoration: booked ? 'line-through' : 'none'
                         }}
-                        title={booked ? 'Este turno ya fue reservado' : 'Disponible'}
+                        title={tooSoon ? 'Disponible a partir de 2 horas de anticipación' : booked ? 'Este turno ya fue reservado' : 'Disponible'}
                       >
-                        {t} hs {booked && <span style={{ fontSize: '0.7rem', display: 'block', textDecoration: 'none', color: '#f87171' }}>Ocupado</span>}
+                        {t} hs {booked && <span style={{ fontSize: '0.7rem', display: 'block', textDecoration: 'none', color: '#f87171' }}>{tooSoon ? 'Con anticipación' : 'Ocupado'}</span>}
                       </button>
                     );
                   })}
@@ -290,6 +313,11 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 {availabilityError && (
                   <p style={{ color: '#fca5a5', fontSize: '0.8rem', margin: '10px 0 0' }}>
                     {availabilityError}
+                  </p>
+                )}
+                {selectedDate === todayStr && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '10px 0 0' }}>
+                    Hoy solo se muestran horarios con al menos 2 horas de anticipación.
                   </p>
                 )}
               </div>

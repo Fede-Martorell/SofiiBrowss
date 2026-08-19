@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   location: "Bustamante 319, Luján de Cuyo",
   notificationEmail: "sofiibrowss.studio@gmail.com",
   primaryColor: "#d97706",
-  secondaryColor: "#0f172a",
+  secondaryColor: "#1f1412",
   accentColor: "#f59e0b",
   fontFamily: "'Plus Jakarta Sans', sans-serif",
   workingDays: [1, 2, 3, 4, 5, 6], // Mon-Sat
