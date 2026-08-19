@@ -2,16 +2,11 @@ import { supabase } from './supabase';
 
 type CalendarAction = 'upsert' | 'cancel' | 'delete';
 
-/**
- * La sincronización es opcional: solo se activa cuando la Edge Function y las
- * credenciales de Google ya fueron configuradas en producción.
- */
+/** Sincroniza el turno con la Edge Function ya configurada en Supabase. */
 export async function syncBookingToGoogleCalendar(
   bookingId: string,
   action: CalendarAction,
 ): Promise<void> {
-  if (import.meta.env.VITE_GOOGLE_CALENDAR_SYNC_ENABLED !== 'true') return;
-
   const { error } = await supabase.functions.invoke('sync-google-calendar', {
     body: { bookingId, action },
   });
