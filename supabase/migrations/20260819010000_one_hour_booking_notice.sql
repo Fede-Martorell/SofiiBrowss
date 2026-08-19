@@ -1,14 +1,5 @@
--- Ejecutar esta migración en el proyecto Supabase antes de publicar.
--- La regla queda en la base, por lo que no puede eludirse desde el navegador.
-
-alter table public.bookings
-  add column if not exists google_calendar_event_id text;
-
-create unique index if not exists bookings_google_calendar_event_id_key
-  on public.bookings (google_calendar_event_id)
-  where google_calendar_event_id is not null;
-
--- Reemplaza la RPC pública existente preservando su interfaz.
+-- Ajusta la anticipación mínima a una hora. Esta migración es necesaria para
+-- proyectos donde la migración anterior ya fue ejecutada en Supabase.
 create or replace function public.create_public_booking(
   p_service_id uuid,
   p_client_name text,
@@ -42,7 +33,6 @@ begin
     raise exception 'El servicio seleccionado no está disponible.' using errcode = '22023';
   end if;
 
-  -- Evita solapamientos incluso si dos personas reservan simultáneamente.
   if exists (
     select 1
     from public.bookings b
@@ -71,12 +61,3 @@ $$;
 
 revoke all on function public.create_public_booking(uuid, text, text, date, time, text) from public;
 grant execute on function public.create_public_booking(uuid, text, text, date, time, text) to anon, authenticated;
-
--- Habilita las actualizaciones instantáneas del panel de dueña/equipo.
-do $$
-begin
-  alter publication supabase_realtime add table public.bookings;
-exception
-  when duplicate_object then null;
-end;
-$$;

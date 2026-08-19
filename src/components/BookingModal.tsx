@@ -8,7 +8,7 @@ interface BookingModalProps {
   settings: AppSettings;
   bookings?: Booking[];
   onClose: () => void;
-  onConfirmBooking: (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => Promise<boolean>;
+  onConfirmBooking: (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }) => Promise<boolean | string>;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
@@ -112,14 +112,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const isTooSoon = (time: string) => {
     if (selectedDate !== todayStr) return false;
     const appointment = new Date(`${selectedDate}T${time}:00-03:00`);
-    return appointment.getTime() < now.getTime() + 2 * 60 * 60 * 1000;
+    return appointment.getTime() < now.getTime() + 60 * 60 * 1000;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime || !clientName || !clientPhone) return;
     if (selectedDate < todayStr || isTooSoon(selectedTime)) {
-      setSubmitError('Los turnos deben solicitarse con al menos 2 horas de anticipación.');
+      setSubmitError('Los turnos deben solicitarse con al menos 1 hora de anticipación.');
       setStep(1);
       return;
     }
@@ -134,8 +134,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       notes
     });
 
-    if (!confirmed) {
-      setSubmitError('No pudimos registrar el turno. Revisá los datos o elegí otro horario.');
+    if (confirmed !== true) {
+      setSubmitError(typeof confirmed === 'string'
+        ? confirmed
+        : 'No pudimos registrar el turno. Revisá los datos o elegí otro horario.');
       setIsSubmitting(false);
       return;
     }
@@ -317,7 +319,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 )}
                 {selectedDate === todayStr && (
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '10px 0 0' }}>
-                    Hoy solo se muestran horarios con al menos 2 horas de anticipación.
+                    Hoy solo se muestran horarios con al menos 1 hora de anticipación.
                   </p>
                 )}
               </div>

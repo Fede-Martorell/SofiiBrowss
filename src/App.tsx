@@ -499,11 +499,11 @@ export function App() {
   };
 
   // Guardar turnos en Supabase
-  const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }): Promise<boolean> => {
-    if (!selectedService) return false;
+  const handleConfirmBooking = async (bookingData: { clientName: string; clientPhone: string; date: string; time: string; notes: string }): Promise<boolean | string> => {
+    if (!selectedService) return 'El servicio ya no está disponible. Cerrá la ventana y volvé a seleccionarlo.';
     const appointment = new Date(`${bookingData.date}T${bookingData.time}:00-03:00`);
-    if (Number.isNaN(appointment.getTime()) || appointment.getTime() < Date.now() + 2 * 60 * 60 * 1000) {
-      return false;
+    if (Number.isNaN(appointment.getTime()) || appointment.getTime() < Date.now() + 60 * 60 * 1000) {
+      return 'Los turnos deben solicitarse con al menos 1 hora de anticipación.';
     }
 
     const newBooking: Booking = {
@@ -531,7 +531,13 @@ export function App() {
 
     if (error) {
       console.error("Error al insertar en Supabase:", error);
-      return false;
+      if (error.message.includes('hora') || error.message.includes('anticipación')) {
+        return 'Los turnos deben solicitarse con al menos 1 hora de anticipación.';
+      }
+      if (error.code === '23505' || error.message.toLowerCase().includes('reservado')) {
+        return 'Ese horario acaba de ser reservado. Elegí otro horario.';
+      }
+      return `No se pudo registrar el turno: ${error.message}`;
     }
 
     newBooking.id = bookingId ?? newBooking.id;
