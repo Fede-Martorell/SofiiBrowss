@@ -43,9 +43,10 @@ interface ImageCarouselProps {
   images: string[];
   alt: string;
   height?: string;
+  className?: string;
 }
 
-const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '200px' }) => {
+const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '200px', className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -73,6 +74,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
 
   return (
     <div
+      className={className}
       style={{ height, overflow: 'hidden', position: 'relative' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -877,6 +879,7 @@ export function App() {
                 images={service.images && service.images.length > 0 ? service.images : [service.image]}
                 alt={service.name}
                 height="200px"
+                className="service-card-image"
               />
 
               <div className="service-card-body" style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}>

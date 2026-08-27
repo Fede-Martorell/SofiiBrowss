@@ -511,6 +511,11 @@ button, a, .btn-primary, .btn-secondary {
   .service-card-body {
     padding: 16px !important;
   }
+  /* En pantallas chicas las fotos necesitan más protagonismo para que cada
+     servicio se lea como una tarjeta completa al recorrer la sección. */
+  .service-card-image {
+    height: clamp(240px, 68vw, 300px) !important;
+  }
   .btn-primary {
     white-space: normal;
     text-align: center;
