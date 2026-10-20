@@ -1,10 +1,8 @@
 // Tipos que reflejan el schema de la DB (snake_case → camelCase en el cliente).
-// Mantener sincronizado con el SQL del plan.
 
 export type UserRole = 'owner' | 'staff';
 export type ServiceCategory = 'lashes' | 'brows' | 'combo';
 export type GalleryCategory = 'lashes' | 'brows';
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
 export interface Profile {
   id: string;
@@ -37,19 +35,6 @@ export interface GalleryItem {
   images: string[];
   description: string | null;
   sort_order: number;
-  created_at: string;
-}
-
-export interface Booking {
-  id: string;
-  service_id: string | null;
-  service_name: string;
-  client_name: string;
-  client_phone: string;
-  appointment_date: string; // YYYY-MM-DD
-  appointment_time: string; // HH:MM
-  notes: string | null;
-  status: BookingStatus;
   created_at: string;
 }
 

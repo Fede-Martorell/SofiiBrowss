@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 Modelfile
+Sofibrowss.txt
+supabase/.temp/
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*

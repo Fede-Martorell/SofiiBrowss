@@ -4,14 +4,12 @@
 import type {
   Service as DbService,
   GalleryItem as DbGallery,
-  Booking as DbBooking,
   Review as DbReview,
   AppSettingsRow as DbSettings,
 } from './db';
 import type {
   Service as LegacyService,
   GalleryItem as LegacyGallery,
-  Booking as LegacyBooking,
   Review as LegacyReview,
   AppSettings,
 } from '../types';
@@ -41,21 +39,6 @@ export function dbToGallery(g: DbGallery): LegacyGallery {
     imageUrl: g.image_url,
     images: g.images ?? [],
     description: g.description ?? undefined,
-  };
-}
-
-export function dbToBooking(b: DbBooking): LegacyBooking {
-  return {
-    id: b.id,
-    serviceId: b.service_id ?? '',
-    serviceName: b.service_name,
-    clientName: b.client_name,
-    clientPhone: b.client_phone,
-    date: b.appointment_date,
-    time: b.appointment_time,
-    notes: b.notes ?? undefined,
-    status: b.status,
-    createdAt: b.created_at,
   };
 }
 

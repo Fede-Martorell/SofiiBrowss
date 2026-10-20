@@ -2,7 +2,6 @@ import { supabase } from './supabase';
 import type {
   Service,
   GalleryItem,
-  Booking,
   Review,
   AppSettingsRow,
   Profile,
@@ -96,52 +95,6 @@ export async function deleteGalleryItem(id: string): Promise<void> {
 }
 
 // ─────────────────────────────────────────────
-// BOOKINGS
-// ─────────────────────────────────────────────
-export async function fetchBookings(): Promise<Booking[]> {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .order('appointment_date', { ascending: true })
-    .order('appointment_time', { ascending: true });
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function createBooking(
-  input: Omit<Booking, 'id' | 'created_at' | 'status'> & {
-    status?: Booking['status'];
-  }
-): Promise<Booking> {
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert({ ...input, status: input.status ?? 'pending' })
-    .select()
-    .single();
-  if (error) throw error; // 23505 = unique_violation → slot ocupado
-  return data;
-}
-
-export async function updateBookingStatus(
-  id: string,
-  status: Booking['status']
-): Promise<Booking> {
-  const { data, error } = await supabase
-    .from('bookings')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteBooking(id: string): Promise<void> {
-  const { error } = await supabase.from('bookings').delete().eq('id', id);
-  if (error) throw error;
-}
-
-// ─────────────────────────────────────────────
 // REVIEWS
 // ─────────────────────────────────────────────
 export async function fetchReviews(): Promise<Review[]> {
@@ -151,20 +104,6 @@ export async function fetchReviews(): Promise<Review[]> {
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
-}
-
-export async function createReview(
-  input: Omit<Review, 'id' | 'created_at' | 'approved'> & {
-    approved?: boolean;
-  }
-): Promise<Review> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .insert({ ...input, approved: input.approved ?? false })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
 }
 
 export async function toggleReviewApproval(
@@ -237,12 +176,6 @@ export async function fetchMyProfile(): Promise<Profile | null> {
 export async function fetchMyRole(): Promise<UserRole | null> {
   const p = await fetchMyProfile();
   return p?.role ?? null;
-}
-
-export async function fetchProfiles(): Promise<Profile[]> {
-  const { data, error } = await supabase.from('profiles').select('*');
-  if (error) throw error;
-  return data ?? [];
 }
 
 // ─────────────────────────────────────────────
