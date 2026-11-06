@@ -228,6 +228,8 @@ export function App() {
     return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
   });
 
+  const [reviewPage, setReviewPage] = useState(0);
+
   // Cargar datos iniciales desde Supabase
   useEffect(() => {
     const fetchSupabaseData = async () => {
@@ -564,6 +566,10 @@ export function App() {
   const filteredServices = activeCategoryFilter === 'all'
     ? services
     : services.filter(s => s.category === activeCategoryFilter);
+
+  const reviewPageCount = Math.max(1, Math.ceil(reviews.length / 4));
+  const currentReviewPage = Math.min(reviewPage, reviewPageCount - 1);
+  const visibleReviews = reviews.slice(currentReviewPage * 4, currentReviewPage * 4 + 4);
 
   return (
     <div className="app-shell" style={{
@@ -1020,13 +1026,33 @@ export function App() {
             </button>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
-            gap: 'clamp(12px, 2.5vw, 20px)'
-          }}>
-            {reviews.map((rev) => (
-              <div
+          {reviewPageCount > 1 && (
+            <nav className="reviews-pagination" aria-label="Páginas de reseñas">
+              <button
+                type="button"
+                aria-label="Reseñas anteriores"
+                aria-controls="reviews-list"
+                disabled={currentReviewPage === 0}
+                onClick={() => setReviewPage(currentReviewPage - 1)}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span role="status">Página {currentReviewPage + 1} de {reviewPageCount}</span>
+              <button
+                type="button"
+                aria-label="Reseñas siguientes"
+                aria-controls="reviews-list"
+                disabled={currentReviewPage === reviewPageCount - 1}
+                onClick={() => setReviewPage(currentReviewPage + 1)}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </nav>
+          )}
+
+          <div id="reviews-list" className="reviews-grid">
+            {visibleReviews.map((rev) => (
+              <article
                 key={rev.id}
                 className="glass-panel"
                 style={{
@@ -1035,6 +1061,8 @@ export function App() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  minWidth: 0,
+                  overflowWrap: 'anywhere',
                   gap: '12px'
                 }}
               >
@@ -1068,7 +1096,7 @@ export function App() {
                   <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '0.92rem' }}>{rev.clientName}</strong>
                   <span style={{ fontSize: '0.78rem', color: '#b87b32', fontWeight: 600 }}>{rev.serviceName}</span>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>

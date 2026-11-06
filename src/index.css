@@ -420,6 +420,40 @@ button, a, .btn-primary, .btn-secondary {
 
 /* ================= RESPONSIVE ================= */
 
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 2.5vw, 20px);
+}
+.reviews-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.reviews-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--primary);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.reviews-pagination button:hover:not(:disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+.reviews-pagination button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.reviews-pagination button:disabled { opacity: 0.35; cursor: default; }
+
 .service-card-image {
   height: auto !important;
   aspect-ratio: 1 / 1;
@@ -515,6 +549,7 @@ button, a, .btn-primary, .btn-secondary {
 .photo-viewer-controls { display: flex; align-items: center; justify-content: center; gap: 24px; min-height: 44px; }
 
 @media (max-width: 1024px) {
+  .reviews-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-section { padding-top: 56px !important; padding-bottom: 40px !important; }
 }
 
@@ -620,6 +655,7 @@ button, a, .btn-primary, .btn-secondary {
 }
 
 @media (max-width: 600px) {
+  .reviews-grid { grid-template-columns: 1fr; }
   .services-grid { grid-template-columns: 1fr !important; }
 }
 
