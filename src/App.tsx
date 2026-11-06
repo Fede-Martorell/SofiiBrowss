@@ -48,7 +48,8 @@ import {
   Heart,
   Check,
   X,
-  TriangleAlert
+  TriangleAlert,
+  ExternalLink
 } from 'lucide-react';
 
 interface ImageCarouselProps {
@@ -1067,10 +1068,17 @@ export function App() {
           <div>
             <h4 style={{ color: 'var(--text-main)', marginBottom: '16px', fontSize: '1.05rem' }}>Ubicación & Contacto</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <MapPin size={18} style={{ color: '#d8a563' }} />
-                <span style={{ color: 'var(--text-main)' }}>{settings.location}</span>
-              </div>
+              <a
+                className="footer-location"
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.location)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${settings.location}. Abrir en Google Maps (nueva pestaña)`}
+              >
+                <MapPin size={18} aria-hidden="true" />
+                <span>{settings.location}</span>
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <Phone size={18} style={{ color: '#d8a563' }} />
                 <a

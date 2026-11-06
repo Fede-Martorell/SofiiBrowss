@@ -147,6 +147,19 @@ html.light-mode .restyled-site .btn-primary { color: #fffaf3; }
 .restyled-site .reviews-grid article strong { font-size: .82rem !important; font-weight: 600; }
 .restyled-site .reviews-pagination button { width: 40px; height: 40px; border-radius: 6px; color: var(--studio-gold); }
 .restyled-site .site-footer { background: var(--secondary) !important; border-color: var(--studio-line) !important; }
+.footer-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  color: var(--text-main);
+  border-radius: 4px;
+}
+.footer-location span { text-decoration: underline; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.footer-location:hover { color: var(--studio-gold); }
+.footer-location:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 4px; }
 .restyled-site .floating-whatsapp { background: var(--studio-gold) !important; color: #251b12 !important; box-shadow: 0 4px 16px #0002 !important; width: 48px !important; height: 48px !important; }
 
 /* Management uses the same surfaces and contrast in both roles and themes. */
