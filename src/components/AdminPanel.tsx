@@ -22,7 +22,10 @@ import {
   ImagePlus,
   Star,
   LogOut,
-  GripVertical
+  GripVertical,
+  Info,
+  Mail,
+  Save
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -80,14 +83,14 @@ const SortableServiceCard: React.FC<SortableServiceCardProps> = ({ service, onEd
         />
         <div>
           <h4 style={{ color: 'var(--text-main)', fontSize: '1rem', fontWeight: 700 }}>{service.name}</h4>
-          <p style={{
+          <p className="admin-service-price" style={{
             background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800,
             fontSize: '1.15rem', margin: '2px 0'
           }}>
             ${service.price.toLocaleString('es-AR')}
           </p>
-          <p style={{ fontSize: '0.8rem', color: '#e6d7c7' }}>⏱ {service.durationMinutes} min</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}><Clock className="inline-icon" size={13} aria-hidden="true" /> {service.durationMinutes} min</p>
         </div>
       </div>
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '12px' }}>{service.description}</p>
@@ -343,7 +346,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
       overflow: 'hidden'
     }}>
       {/* Header Admin */}
-      <div className="admin-header-row" style={{
+      <div className="admin-header-row admin-toolbar" style={{
         padding: '14px 20px',
         background: 'var(--glass-bg)',
         borderBottom: '1px solid var(--glass-border)',
@@ -354,7 +357,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
         gap: '12px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 auto' }}>
-          <div style={{
+          <div className="admin-brand-icon" style={{
             background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
             padding: '8px',
             borderRadius: '10px',
@@ -371,7 +374,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
             <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>
               {userRole === 'owner'
                 ? 'Gestioná turnos, catálogo, fotos y colores'
-                : 'Consulta y confirmá los turnos agendados'}
+                : 'Consultá y confirmá los turnos agendados'}
             </p>
           </div>
         </div>
@@ -398,7 +401,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
       {/* Main Admin Area */}
       <div className="admin-main-container" style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         {/* Navigation Sidebar */}
-        <div className="admin-sidebar" style={{
+        <nav className="admin-sidebar" aria-label="Secciones del panel" style={{
           width: '220px',
           flexShrink: 0,
           background: 'var(--glass-bg)',
@@ -410,6 +413,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           overflowX: 'auto'
         }}>
           <button
+            type="button"
+            aria-pressed={activeTab === 'bookings'}
             onClick={() => setActiveTab('bookings')}
             style={{
               display: 'flex',
@@ -429,7 +434,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           >
             <Calendar size={18} /> Turnos Recibidos
             {bookings.filter(b => b.status === 'pending').length > 0 && (
-              <span style={{
+              <span className="admin-pending-count" style={{
                 background: '#f43f5e',
                 color: '#fff',
                 borderRadius: '12px',
@@ -445,6 +450,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
           {userRole === 'owner' && (
             <>
               <button
+                type="button"
+                aria-pressed={activeTab === 'services'}
                 onClick={() => setActiveTab('services')}
                 style={{
                   display: 'flex',
@@ -466,6 +473,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               </button>
 
               <button
+                type="button"
+                aria-pressed={activeTab === 'gallery'}
                 onClick={() => setActiveTab('gallery')}
                 style={{
                   display: 'flex',
@@ -487,6 +496,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               </button>
 
               <button
+                type="button"
+                aria-pressed={activeTab === 'reviews'}
                 onClick={() => setActiveTab('reviews')}
                 style={{
                   display: 'flex',
@@ -508,6 +519,8 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               </button>
 
               <button
+                type="button"
+                aria-pressed={activeTab === 'settings'}
                 onClick={() => setActiveTab('settings')}
                 style={{
                   display: 'flex',
@@ -529,7 +542,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               </button>
             </>
           )}
-        </div>
+        </nav>
 
         {/* Content View */}
         <div className="admin-content" style={{ flex: 1, padding: '24px', overflowY: 'auto', minWidth: 0 }}>
@@ -563,7 +576,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
                           <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)', overflowWrap: 'anywhere' }}>{booking.clientName}</strong>
-                          <span style={{
+                          <span data-status={booking.status} style={{
                             fontSize: '0.72rem',
                             padding: '2px 8px',
                             borderRadius: '12px',
@@ -574,7 +587,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                             {booking.status === 'confirmed' ? 'Confirmado' : booking.status === 'cancelled' ? 'Cancelado' : 'Pendiente'}
                           </span>
                         </div>
-                        <p style={{
+                        <p className="admin-service-price" style={{
                           background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 100%)',
                           WebkitBackgroundClip: 'text',
                           WebkitTextFillColor: 'transparent',
@@ -596,8 +609,9 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div className="admin-card-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <a
+                          className="admin-whatsapp"
                           href={`https://wa.me/${booking.clientPhone.replace(/[^0-9]/g, '')}`}
                           target="_blank"
                           rel="noreferrer"
@@ -621,7 +635,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         {booking.status !== 'confirmed' && (
                           <button
                             onClick={() => handleBookingStatus(booking, 'confirmed')}
-                            className="btn-secondary"
+                            className="btn-secondary admin-confirm"
                             style={{
                               padding: '8px 12px',
                               color: '#4ade80',
@@ -673,7 +687,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
 
               {/* Service Form modal overlay */}
               {editingService && (
-                <div style={{
+                <div className="admin-editor" style={{
                   background: 'var(--secondary-card)',
                   padding: '24px',
                   borderRadius: '16px',
@@ -747,7 +761,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                         }}
                       />
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                        💡 Si el servicio dura 90 min (hora y media), podés poner horarios fijos como 10:00, 11:30, 13:00 o dejar que el sistema arme los bloques automáticamente.
+                        <Info className="inline-icon" size={14} aria-hidden="true" /> Si el servicio dura 90 min (hora y media), podés poner horarios fijos como 10:00, 11:30, 13:00 o dejar que el sistema arme los bloques automáticamente.
                       </span>
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
@@ -868,7 +882,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                               }}
                               title="Eliminar esta foto"
                             >
-                              ✕
+                              <X size={16} aria-hidden="true" />
                             </button>
                           </div>
                         ))}
@@ -931,7 +945,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
               </div>
 
               {editingGallery && (
-                <div style={{
+                <div className="admin-editor" style={{
                   background: 'var(--secondary-card)',
                   padding: '24px',
                   borderRadius: '16px',
@@ -1064,7 +1078,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                                 fontSize: '10px'
                               }}
                             >
-                              ✕
+                              <X size={16} aria-hidden="true" />
                             </button>
                           </div>
                         ))}
@@ -1128,7 +1142,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                               <Star key={i} size={14} style={{ color: '#d8a563', fill: '#d8a563' }} />
                             ))}
                           </div>
-                          <span style={{
+                          <span data-status={rev.verified ? 'confirmed' : 'pending'} style={{
                             fontSize: '0.75rem',
                             padding: '2px 8px',
                             borderRadius: '12px',
@@ -1136,7 +1150,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                             color: rev.verified ? '#16a34a' : '#d97706',
                             fontWeight: 700
                           }}>
-                            {rev.verified ? '✓ Aprobada / Atendida' : 'Pendiente'}
+                            {rev.verified ? <><Check className="inline-icon" size={12} aria-hidden="true" /> Aprobada / Atendida</> : 'Pendiente'}
                           </span>
                         </div>
 
@@ -1163,7 +1177,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                             color: rev.verified ? 'var(--text-main)' : '#16a34a'
                           }}
                         >
-                          {rev.verified ? 'Marcar Pendiente' : '✓ Aprobar Reseña'}
+                          {rev.verified ? 'Marcar Pendiente' : <><Check size={14} aria-hidden="true" /> Aprobar Reseña</>}
                         </button>
                         <button
                           onClick={() => handleDeleteReview(rev.id)}
@@ -1255,7 +1269,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>📩 Email para Recibir Notificaciones de Turnos Nuevos</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><Mail className="inline-icon" size={14} aria-hidden="true" /> Email para Recibir Notificaciones de Turnos Nuevos</label>
                     <input
                       type="email"
                       className="custom-input"
@@ -1330,7 +1344,7 @@ Te esperamos con los brazos abiertos para dejarte más hermosa aún. Si tenés a
                 </div>
 
                 <button type="submit" className="btn-primary" style={{ justifyContent: 'center', padding: '14px' }}>
-                  Guardar Todos los Cambios ✨
+                  <Save size={18} aria-hidden="true" /> Guardar Todos los Cambios
                 </button>
               </form>
             </div>

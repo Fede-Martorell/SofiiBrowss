@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { AppSettings, Service, Booking } from '../types';
 import { supabase } from '../lib/supabase';
-import { Calendar, Clock, CheckCircle2, MessageCircle, Sparkles, User, Phone, FileText } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, MessageCircle, Sparkles, User, Phone, FileText, X } from 'lucide-react';
 
 interface BookingModalProps {
   service: Service;
@@ -224,7 +224,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
             cursor: 'pointer'
           }}
         >
-          ✕
+          <X size={20} aria-hidden="true" />
         </button>
 
         {step !== 3 && (
@@ -291,6 +291,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                       <button
                         key={t}
                         type="button"
+                        aria-pressed={selectedTime === t}
                         disabled={booked}
                         onClick={() => setSelectedTime(t)}
                         style={{
@@ -403,7 +404,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 style={{ flex: 2, justifyContent: 'center' }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Guardando…' : 'Confirmar Reserva ✨'}
+                {isSubmitting ? 'Guardando…' : 'Confirmar Reserva'}
               </button>
             </div>
             {submitError && (
@@ -482,7 +483,7 @@ ${notes ? `📝 *Nota:* ${notes}` : ''}
                 className="btn-secondary"
                 style={{ justifyContent: 'center', textDecoration: 'none', padding: '12px' }}
               >
-                📅 Recordar en mi Google Calendar
+                <Calendar size={18} aria-hidden="true" /> Recordar en mi Google Calendar
               </a>
 
               <button

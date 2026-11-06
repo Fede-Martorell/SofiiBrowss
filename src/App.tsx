@@ -17,6 +17,7 @@ import { BookingModal } from './components/BookingModal';
 import { createPortal } from 'react-dom';
 import { PhotoViewer } from './components/PhotoViewer';
 import { CrossfadeImage } from './components/CrossfadeImage';
+import './restyling.css';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 import {
@@ -40,7 +41,14 @@ import {
   Star,
   Award,
   MessageSquare,
-  Expand
+  Expand,
+  Eye,
+  Feather,
+  Gem,
+  Heart,
+  Check,
+  X,
+  TriangleAlert
 } from 'lucide-react';
 
 interface ImageCarouselProps {
@@ -572,7 +580,7 @@ export function App() {
   const visibleReviews = reviews.slice(currentReviewPage * 4, currentReviewPage * 4 + 4);
 
   return (
-    <div className="app-shell" style={{
+    <div className="app-shell restyled-site" style={{
       '--primary': settings.primaryColor,
       '--accent': settings.accentColor,
       fontFamily: settings.fontFamily,
@@ -581,241 +589,53 @@ export function App() {
       overflowX: 'hidden'
     } as React.CSSProperties}>
 
-      {/* Header / Navbar */}
-      <header className="site-header" style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--glass-border)',
-        padding: '12px 16px'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'nowrap',
-          gap: '8px',
-          minWidth: 0
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-            <div style={{
-              padding: '6px 10px',
-              borderRadius: '12px',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-              maxWidth: '100%'
-            }}>
-              <div style={{
-                width: '60px',
-                maxWidth: '100%',
-                height: '4px',
-                borderTop: '2.5px solid #d8a563',
-                borderRadius: '100px 100px 0 0',
-                background: 'linear-gradient(90deg, transparent, #f5d796, #d8a563, transparent)',
-                marginBottom: '1px'
-              }} />
-              <span style={{
-                fontSize: 'clamp(0.95rem, 2.4vw, 1.05rem)',
-                fontWeight: 700,
-                fontFamily: "'Playfair Display', serif",
-                color: 'var(--text-main)',
-                lineHeight: 1.1,
-                whiteSpace: 'nowrap'
-              }}>
-                Sofibrowss
-              </span>
-              <span style={{
-                fontSize: '0.5rem',
-                letterSpacing: '2.5px',
-                textTransform: 'uppercase',
-                background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 700,
-                marginTop: '1px',
-                display: 'inline-block',
-                whiteSpace: 'nowrap'
-              }}>
-                services
-              </span>
-            </div>
-          </div>
-
-          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button
-              onClick={toggleTheme}
-              className="btn-secondary"
-              style={{
-                padding: '8px',
-                borderRadius: '50%',
-                width: '38px',
-                height: '38px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderColor: 'var(--glass-border)'
-              }}
-              title={theme === 'dark' ? 'Cambiar a Modo Claro / Nude' : 'Cambiar a Modo Noche'}
-            >
-              {theme === 'dark' ? <Sun size={18} style={{ color: '#d8a563' }} /> : <Moon size={18} style={{ color: '#d8a563' }} />}
+      {/* Header and studio introduction */}
+      <header className="site-header restyle-header">
+        <div className="restyle-header-inner">
+          <a className="studio-wordmark" href="#" aria-label="Sofibrowss, inicio">
+            <span>Sofibrowss<span className="wordmark-dot">.</span></span>
+            <small>ESTUDIO DE PESTAÑAS & CEJAS</small>
+          </a>
+          <nav className="studio-nav" aria-label="Navegación principal">
+            <a href="#servicios">Servicios</a>
+            <a href="#trabajos">Nuestros trabajos</a>
+            <a href="#opiniones">Opiniones</a>
+          </nav>
+          <div className="header-actions">
+            <button type="button" onClick={toggleTheme} className="theme-toggle"
+              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}>
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-
-            <a
-              href="#contacto"
-              className="btn-secondary"
-              style={{ padding: '8px 16px', fontSize: '0.85rem', color: 'var(--text-main)', textDecoration: 'none' }}
-            >
-              <Phone size={14} style={{ color: '#d8a563' }} /> Contacto
-            </a>
+            <a href="#servicios" className="btn-primary header-booking">Reservar turno <ChevronRight size={16} /></a>
           </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="hero-section" style={{
-        position: 'relative',
-        padding: 'clamp(40px, 8vw, 80px) clamp(14px, 4vw, 24px) clamp(36px, 6vw, 60px) clamp(14px, 4vw, 24px)',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        textAlign: 'center'
-      }}>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{
-            display: 'inline-flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: 'clamp(16px, 4vw, 24px) clamp(20px, 5vw, 36px)',
-            borderRadius: 'clamp(18px, 4vw, 24px)',
-            background: 'var(--glass-bg)',
-            border: '1px solid var(--glass-border)',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
-            backdropFilter: 'blur(20px)',
-            maxWidth: '100%'
-          }}>
-            <div style={{
-              width: 'clamp(120px, 35vw, 180px)',
-              height: 'clamp(6px, 1vw, 8px)',
-              borderTop: '3px solid #d8a563',
-              borderRadius: '100px 100px 0 0',
-              marginBottom: '6px',
-              background: 'linear-gradient(90deg, transparent, #f5d796, #d8a563, transparent)'
-            }} />
-            <h2 style={{
-              fontSize: 'clamp(1.8rem, 7vw, 2.6rem)',
-              fontWeight: 700,
-              fontFamily: "'Playfair Display', serif",
-              color: 'var(--text-main)',
-              letterSpacing: '-0.5px',
-              lineHeight: 1,
-              margin: 0
-            }}>
-              Sofibrow
-            </h2>
-            <span style={{
-              fontSize: 'clamp(0.65rem, 2vw, 0.85rem)',
-              letterSpacing: 'clamp(3px, 1vw, 5px)',
-              textTransform: 'uppercase',
-              background: 'linear-gradient(135deg, #f5d796 0%, #d8a563 50%, #b87b32 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginTop: '4px',
-              fontWeight: 700,
-              display: 'inline-block',
-              whiteSpace: 'nowrap'
-            }}>
-              s e r v i c e s
-            </span>
+      <section className="hero-section restyle-hero">
+        <div className="hero-copy">
+          <span className="studio-eyebrow">Belleza en los detalles</span>
+          <h1>{settings.tagline}</h1>
+          <p>Diseño de cejas y pestañas que acompaña tu esencia. Atención personalizada, técnicas profesionales y resultados que se sienten tuyos.</p>
+          <div className="hero-actions">
+            <a className="btn-primary" href="#servicios">Encontrá tu tratamiento <ChevronRight size={18} /></a>
+            <a className="hero-work-link" href="#trabajos">Ver nuestros trabajos</a>
           </div>
+          <span className="hero-location"><MapPin size={15} /> {settings.location}</span>
         </div>
-
-        <div className="hero-badge" style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 18px',
-          borderRadius: '30px',
-          background: 'var(--glass-bg)',
-          border: '1.5px solid #d8a563',
-          boxShadow: '0 4px 20px rgba(216, 165, 99, 0.25)',
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          marginBottom: '20px',
-          backdropFilter: 'blur(10px)',
-          maxWidth: '100%',
-          boxSizing: 'border-box'
-        }}>
-          <Star size={16} style={{ color: '#b87b32', fill: '#b87b32' }} />
-          <span style={{
-            color: 'var(--text-main)',
-            fontWeight: 800,
-            letterSpacing: '0.2px'
-          }}>
-            Reservas Online Rápidas y Directas
-          </span>
-        </div>
-
-        <h1 style={{
-          fontSize: 'clamp(1.7rem, 5.5vw, 3.2rem)',
-          fontWeight: 800,
-          color: 'var(--text-main)',
-          marginBottom: '20px',
-          lineHeight: 1.15,
-          padding: '0 4px'
-        }}>
-          {settings.tagline}
-        </h1>
-
-        <p style={{
-          maxWidth: '650px',
-          margin: '0 auto 36px auto',
-          color: 'var(--text-muted)',
-          fontSize: '1.1rem',
-          lineHeight: 1.6
-        }}>
-          Diseño personalizado de mirada, lifting de pestañas, extensiones y laminado de cejas profesional. Seleccioná tu turno en 1 minuto.
-        </p>
-
-        <div className="hero-highlights" style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 'clamp(10px, 2vw, 24px)',
-          flexWrap: 'wrap',
-          maxWidth: '900px',
-          margin: '0 auto'
-        }}>
-          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
-            <Award size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
-            <div style={{ textAlign: 'left', minWidth: 0 }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Técnicas Profesionales</strong>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Materiales 100% aprobados</span>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
-            <Calendar size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
-            <div style={{ textAlign: 'left', minWidth: 0 }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Turnos Instantáneos</strong>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Notificación por WhatsApp</span>
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ padding: 'clamp(10px, 2.5vw, 16px) clamp(14px, 3vw, 24px)', display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 240px', minWidth: 0 }}>
-            <MapPin size={22} style={{ color: '#d8a563', flexShrink: 0 }} />
-            <div style={{ textAlign: 'left', minWidth: 0 }}>
-              <strong style={{ color: 'var(--text-main)', display: 'block', fontSize: '0.9rem' }}>Ubicación Céntrica</strong>
-              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{settings.location}</span>
-            </div>
-          </div>
-        </div>
+        <figure className="hero-portrait">
+          <img src={(services[1] ?? services[0])?.image} alt="Detalle de un trabajo de pestañas realizado en Sofibrowss" fetchPriority="high" />
+          <figcaption>
+            <span>Tu mirada, a tu manera.</span>
+            <small>TRABAJOS REALES · SOFIBROWSS</small>
+          </figcaption>
+        </figure>
       </section>
+
+      <div className="studio-details">
+        <div><Award size={20} /><span>Técnicas profesionales</span></div>
+        <div><Calendar size={20} /><span>Reservá online, a tu ritmo</span></div>
+        <div><MapPin size={20} /><span>En el corazón de Luján de Cuyo</span></div>
+      </div>
 
       {/* SERVICES SECTION */}
       <section id="servicios" className="content-section services-section" style={{ maxWidth: '1200px', margin: '40px auto 80px auto', padding: '0 24px' }}>
@@ -831,13 +651,14 @@ export function App() {
             flexWrap: 'wrap'
           }}>
             {[
-              { id: 'all', label: 'Todos los servicios' },
-              { id: 'lashes', label: '✨ Pestañas' },
-              { id: 'brows', label: '🌿 Cejas' },
-              { id: 'combo', label: '💎 Combos VIP' }
+              { id: 'all', label: 'Todos los servicios', icon: null },
+              { id: 'lashes', label: 'Pestañas', icon: Eye },
+              { id: 'brows', label: 'Cejas', icon: Feather },
+              { id: 'combo', label: 'Combos VIP', icon: Gem }
             ].map(tab => (
               <button
                 key={tab.id}
+                aria-pressed={activeCategoryFilter === tab.id}
                 onClick={() => setActiveCategoryFilter(tab.id as any)}
                 style={{
                   padding: '10px 22px',
@@ -858,6 +679,7 @@ export function App() {
                     : '0 2px 8px rgba(0, 0, 0, 0.05)'
                 }}
               >
+                {tab.icon && <tab.icon size={16} aria-hidden="true" />}
                 <span style={{ color: activeCategoryFilter === tab.id ? '#ffffff' : 'var(--text-main)' }}>{tab.label}</span>
               </button>
             ))}
@@ -881,7 +703,7 @@ export function App() {
               }}
             >
               {service.popular && (
-                <div style={{
+                <div className="service-popular" style={{
                   position: 'absolute',
                   top: '12px',
                   right: '12px',
@@ -894,7 +716,7 @@ export function App() {
                   zIndex: 2,
                   boxShadow: '0 4px 15px rgba(138, 87, 28, 0.45)'
                 }}>
-                  🔥 Más Pedido
+                  <Star size={13} aria-hidden="true" /> Más elegido
                 </div>
               )}
 
@@ -911,7 +733,7 @@ export function App() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                  <span style={{
+                  <span className="service-price" style={{
                     display: 'inline-block',
                     fontSize: '1.45rem',
                     fontWeight: 800,
@@ -945,7 +767,7 @@ export function App() {
       </section>
 
       {/* GALLERY SECTION */}
-      <section className="content-section gallery-section" style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px' }}>
+      <section id="trabajos" className="content-section gallery-section" style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 style={{ fontSize: '2.2rem', color: 'var(--text-main)', marginBottom: '10px' }}>Trabajos Realizados</h2>
           <p style={{ color: 'var(--text-muted)' }}>Resultados reales de nuestras clientas de pestañas y cejas</p>
@@ -991,7 +813,7 @@ export function App() {
         </div>
 
         {/* REVIEWS SECTION */}
-        <div className="reviews-section" style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px dashed var(--glass-border)' }}>
+        <div id="opiniones" className="reviews-section" style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px dashed var(--glass-border)' }}>
           <div className="reviews-header" style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -1010,7 +832,7 @@ export function App() {
                 <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)' }}>5.0 / 5.0</span>
               </div>
               <h3 style={{ fontSize: '1.8rem', color: 'var(--text-main)', margin: 0, fontWeight: 700 }}>
-                Opiniones de Nuestras Clientas ✨
+                Opiniones de Nuestras Clientas
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
                 Experiencias reales luego de su atención en el estudio
@@ -1074,7 +896,7 @@ export function App() {
                       ))}
                     </div>
                     {rev.verified && (
-                      <span style={{
+                      <span className="review-verified" style={{
                         fontSize: '0.72rem',
                         color: '#16a34a',
                         background: 'rgba(34, 197, 94, 0.12)',
@@ -1082,7 +904,7 @@ export function App() {
                         borderRadius: '10px',
                         fontWeight: 700
                       }}>
-                        ✓ Atendida
+                        <Check size={12} aria-hidden="true" /> Atendida
                       </span>
                     )}
                   </div>
@@ -1112,7 +934,7 @@ export function App() {
           <div className="glass-panel modal-panel review-modal-panel" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '12px' }}>
               <h3 style={{ fontSize: 'clamp(1.05rem, 3.5vw, 1.2rem)', color: 'var(--text-main)', fontWeight: 700, margin: 0 }}>
-                Dejar Opinión sobre tu Atención ✨
+                Dejar Opinión sobre tu Atención
               </h3>
               <button
                 onClick={() => setIsReviewModalOpen(false)}
@@ -1131,7 +953,7 @@ export function App() {
                   WebkitTapHighlightColor: 'transparent'
                 }}
               >
-                ✕
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
 
@@ -1201,7 +1023,7 @@ export function App() {
 
               <div className="modal-actions review-modal-actions" style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                 <button type="submit" className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                  Publicar Reseña 💖
+                  Enviar reseña <ChevronRight size={16} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -1304,7 +1126,7 @@ export function App() {
           color: 'var(--text-muted)',
           fontSize: '0.85rem'
         }}>
-          <span>© {new Date().getFullYear()} {settings.businessName}. Diseñado con amor ❤️ para potenciar tu belleza.</span>
+          <span>© {new Date().getFullYear()} {settings.businessName}. Diseñado con amor <Heart className="inline-icon" size={13} aria-hidden="true" /> para potenciar tu belleza.</span>
           <button
             onClick={openAuthModal}
             style={{
@@ -1321,7 +1143,7 @@ export function App() {
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
             title="Acceso restringido para el staff"
           >
-            🔒 Acceso Equipo / Dueña
+            <Lock className="inline-icon" size={13} aria-hidden="true" /> Acceso Equipo / Dueña
           </button>
         </div>
       </footer>
@@ -1400,11 +1222,11 @@ export function App() {
                   cursor: 'pointer'
                 }}
               >
-                ✕
+                <X size={20} aria-hidden="true" />
               </button>
 
-              <div className="reviews-grid" style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <div style={{
+              <div className="admin-login-intro" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <div className="admin-brand-icon" style={{
                   width: '56px',
                   height: '56px',
                   borderRadius: '16px',
@@ -1464,7 +1286,7 @@ export function App() {
                   />
                   {passwordError && (
                     <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '6px', fontWeight: 600 }}>
-                      ⚠️ {passwordError}
+                      <TriangleAlert className="inline-icon" size={14} aria-hidden="true" /> {passwordError}
                     </p>
                   )}
                 </div>
@@ -1475,7 +1297,7 @@ export function App() {
                   style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '6px' }}
                   disabled={isLoggingIn}
                 >
-                  {isLoggingIn ? 'Ingresando…' : 'Ingresar al Panel ✨'}
+                  {isLoggingIn ? 'Ingresando…' : 'Ingresar al Panel'}
                 </button>
               </form>
             </div>
