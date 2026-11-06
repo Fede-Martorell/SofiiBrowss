@@ -14,6 +14,9 @@ import type {
   Review
 } from './types';
 import { BookingModal } from './components/BookingModal';
+import { createPortal } from 'react-dom';
+import { PhotoViewer } from './components/PhotoViewer';
+import { CrossfadeImage } from './components/CrossfadeImage';
 import { AdminPanel } from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 import {
@@ -36,7 +39,8 @@ import {
   ChevronLeft,
   Star,
   Award,
-  MessageSquare
+  MessageSquare,
+  Expand
 } from 'lucide-react';
 
 interface ImageCarouselProps {
@@ -49,14 +53,16 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '200px', className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    if (images.length <= 1) return;
+    if (images.length <= 1 || isHovered || isFocused || isExpanded) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 2200);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [images.length]);
+  }, [images.length, isHovered, isFocused, isExpanded]);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,21 +84,32 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
       style={{ height, overflow: 'hidden', position: 'relative' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false);
+      }}
     >
-      <img
-        src={images[currentIndex]}
-        alt={`${alt} - Foto ${currentIndex + 1}`}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transition: 'transform 0.4s ease, opacity 0.3s ease',
-          userSelect: 'none',
-        }}
-      />
+      <button
+        type="button"
+        className="photo-open"
+        onClick={() => setIsExpanded(true)}
+        aria-label={`Ver foto completa de ${alt}`}
+        aria-haspopup="dialog"
+      >
+        <CrossfadeImage src={images[currentIndex]} alt={`${alt} - Foto ${currentIndex + 1}`} />
+        <span className="photo-open-label"><Expand size={16} /> Ver foto</span>
+      </button>
+
+      {isExpanded && createPortal(
+        <PhotoViewer
+          images={images}
+          title={alt}
+          index={currentIndex}
+          onIndexChange={setCurrentIndex}
+          onClose={() => setIsExpanded(false)}
+        />,
+        document.body
+      )}
 
       {images.length > 1 && (
         <>
@@ -108,8 +125,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
               color: '#fff',
               border: 'none',
               borderRadius: '50%',
-              width: '32px',
-              height: '32px',
+              width: '44px',
+              height: '44px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -134,8 +151,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images, alt, height = '20
               color: '#fff',
               border: 'none',
               borderRadius: '50%',
-              width: '32px',
-              height: '32px',
+              width: '44px',
+              height: '44px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -936,7 +953,7 @@ export function App() {
           {gallery.map((item) => (
             <div
               key={item.id}
-              className="glass-card"
+              className="glass-card gallery-card"
               style={{
                 borderRadius: '16px',
                 overflow: 'hidden',
